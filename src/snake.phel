@@ -1,5 +1,5 @@
 (ns phel-snake\snake
-  (:require phel-snake\modules\color :refer [color-green]))
+  (:require phel-snake\modules\color :refer [color-green color-red]))
 
 (def KEY_LEFT 61)
 (def KEY_RIGHT 64)
@@ -22,4 +22,10 @@
   :direction [1 0]
   :type :snake
   :color (color-green)
+  })
+
+(defn create-apple []
+ {:location [(rand-int field-width) (rand-int field-height)]
+  :color (color-red)
+  :type :apple
   })
