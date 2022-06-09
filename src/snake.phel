@@ -1,5 +1,10 @@
 (ns phel-snake\snake
+  (:use Symfony\Component\Console\Cursor)
+  (:use Symfony\Component\Console\Output\ConsoleOutput)
   (:require phel-snake\modules\color :refer [color-green color-red]))
+
+(def output (php/new ConsoleOutput))
+(def cursor (php/new Cursor output))
 
 (def KEY_LEFT 61)
 (def KEY_RIGHT 64)
@@ -21,12 +26,12 @@
  {:body '([3 0] [2 0] [1 0] [0 0])
   :direction [1 0]
   :type :snake
-  :color (color-green)
+  :color (color-green "X")
   })
 
 (defn create-apple []
  {:location [(rand-int field-width) (rand-int field-height)]
-  :color (color-red)
+  :color (color-red "0")
   :type :apple
   })
 
@@ -57,9 +62,55 @@
     (> head-y field-height)
     (< head-y 0)))
 
-(defn lose? [{ :body [head & body] }]
+(defn lose? [{:body [head & body]}]
   (or (head-overlaps-body? head body)
       (head-outside-bounds? head)))
 
 (defn eats? [{:body [head]} {:location apple}]
   (= head apple))
+
+#################
+# mutable model #
+#################
+
+(defn update-positions [snake apple]
+  (if (eats? (deref snake) (deref apple))
+    (do (set! apple (create-apple))
+        (set! snake (move (deref snake) :grow)))
+    (set! snake (move (deref snake)))))
+
+(defn update-direction [snake direction]
+  (set! snake turn direction))
+
+(defn reset-game [snake apple]
+  (set! snake (create-snake))
+  (set! apple (create-apple)))
+
+#######
+# GUI #
+#######
+(defn paint-apple [apple]
+  (let [{:location [x y]} (deref apple)]
+    (php/-> cursor (moveToPosition x y))
+    (php/-> output (write "🍎"))))
+
+(defn paint-snake [snake]
+  (let [{:body body} (deref snake)]
+    (foreach [[x y] body]
+      (php/-> cursor (moveToPosition x y))
+      (php/-> output (write "🐍")))))
+
+(defn game []
+  (let [snake (var (create-snake))
+        apple (var (create-apple))]
+    (php/-> cursor (hide))
+    (loop []
+      (php/dump "test A")
+        (paint-apple apple)
+        (paint-snake snake)
+        (update-positions snake apple)
+        (php/-> cursor (show))
+        (php/sleep 1)
+        (recur))))
+
+(game)
