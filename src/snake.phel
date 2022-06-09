@@ -29,3 +29,37 @@
   :color (color-red)
   :type :apple
   })
+
+(defn point-to-screen-rect [[pt-x pt-y]]
+  [(* pt-x point-size) (* pt-y point-size) point-size point-size])
+
+(defn move [{:keys [body direction] :as snake} & grow]
+  (put snake :body
+    (cons
+      (let [[head-x head-y] (first body)
+            [dir-x dir-y] direction]
+          [(+ head-x dir-x) (+ head-x dir-y)])
+        (if grow body (pop body)))))
+
+(defn turn [snake direction]
+  (put snake :direction direction))
+
+(defn win? [{:body body}]
+  (>= (count body) win-length))
+
+(defn head-overlaps-body? [head body]
+  (contains? (set body) head))
+
+(defn head-outside-bounds? [[head-x head-y]]
+  (or
+    (> head-x field-width)
+    (< head-x 0)
+    (> head-y field-height)
+    (< head-y 0)))
+
+(defn lose? [{ :body [head & body] }]
+  (or (head-overlaps-body? head body)
+      (head-outside-bounds? head)))
+
+(defn eats? [{:body [head]} {:location apple}]
+  (= head apple))
