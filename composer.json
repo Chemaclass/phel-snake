@@ -1,0 +1,23 @@
+{
+  "name": "phel-lang/phel-scaffolding",
+  "keywords": [
+    "phel",
+    "lisp",
+    "functional",
+    "language"
+  ],
+  "homepage": "https://phel-lang.org/",
+  "license": "MIT",
+  "require": {
+    "ext-readline": "*",
+    "phel-lang/phel-lang": "^0.5"
+  },
+  "require-dev": {
+    "symfony/var-dumper": "5.4.x-dev"
+  },
+  "autoload": {
+    "psr-4": {
+      "PhelGenerated\\": "src/PhelGenerated"
+    }
+  }
+}
