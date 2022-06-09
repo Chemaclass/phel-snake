@@ -1,0 +1,6 @@
+(ns phel-snake-tests\modules\color-test
+  (:require phel-snake\modules\color :refer [color-green])
+  (:require phel\test :refer [deftest is]))
+
+(deftest test-color-green
+  (is (= "\033[0;32mhi\033[0m" (color-green "hi"))))

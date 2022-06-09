@@ -1,0 +1,8 @@
+(ns phel-snake\modules\color
+  (:use Phel\Run\Domain\Repl\ColorStyle))
+
+(defn color-green
+  "A wrapper for the Repl ColorStyle class"
+  [str]
+  (let [style (php/:: ColorStyle (withStyles))]
+    (php/-> style (green str))))

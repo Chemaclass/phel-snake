@@ -1,0 +1,25 @@
+(ns phel-snake\snake
+  (:require phel-snake\modules\color :refer [color-green]))
+
+(def KEY_LEFT 61)
+(def KEY_RIGHT 64)
+(def KEY_UP 77)
+(def KEY_DOWN 73)
+
+(def field-width 50)
+(def field-height 30)
+(def point-size 15)
+(def turn-millis 100)
+(def win-length 10)
+(def directions
+   {KEY_LEFT [-1 0]
+    KEY_RIGHT [1 0]
+    KEY_UP [1 0]
+    KEY_DOWN [1 0]})
+
+(defn create-snake []
+ {:body '([3 0] [2 0] [1 0] [0 0])
+  :direction [1 0]
+  :type :snake
+  :color (color-green)
+  })
