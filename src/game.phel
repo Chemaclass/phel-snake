@@ -1,6 +1,6 @@
 (ns phel-snake\game
   (:require phel-cli-gui\terminal-gui :refer [clear-screen
-                                              read-hex
+                                              read-input
                                               render-board
                                               render])
   (:require phel-snake\logic :refer [generate-new-goal
@@ -42,8 +42,8 @@
   (let [diff-time (- (php/microtime true) start-time)]
     (format "Time: %d secs" (php/round diff-time))))
 
-(defn clean-line [height]
-  (render 0 height (php/str_repeat " " 100)))
+(defn clean-line [y]
+  (render 0 y (php/str_repeat " " 100)))
 
 (defn render-stats [board snake]
   (clean-line (+ 1 (board :height)))
@@ -68,7 +68,7 @@
     (sleep-delay snake)
     (render-board board)
 
-    (let [in (read-hex 3)
+    (let [{:hex in} (read-input 3)
           next-direction (normalize-next-direction in)
           updated-snake (move-snake snake next-direction)
           updated-goal (update-goal snake goal board)]
