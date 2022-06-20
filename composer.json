@@ -8,6 +8,7 @@
     ],
     "license": "MIT",
     "require": {
+        "php": ">=8.0",
         "ext-readline": "*",
         "phel-lang/phel-lang": "^0.7",
         "chemaclass/phel-cli-gui": "dev-master"

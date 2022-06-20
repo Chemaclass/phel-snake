@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "da2a577a7b98c293c37069c9b9003abe",
+    "content-hash": "2ddea5d34f399189468715cd4c738f0c",
     "packages": [
         {
             "name": "chemaclass/phel-cli-gui",
@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Chemaclass/phel-cli-gui.git",
-                "reference": "b3216d4cfcd9f3f3a65b94581605e854097feb3e"
+                "reference": "96f1bab7b523aa2ee0ad24ff58ced70052b636cd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Chemaclass/phel-cli-gui/zipball/b3216d4cfcd9f3f3a65b94581605e854097feb3e",
-                "reference": "b3216d4cfcd9f3f3a65b94581605e854097feb3e",
+                "url": "https://api.github.com/repos/Chemaclass/phel-cli-gui/zipball/96f1bab7b523aa2ee0ad24ff58ced70052b636cd",
+                "reference": "96f1bab7b523aa2ee0ad24ff58ced70052b636cd",
                 "shasum": ""
             },
             "require": {
@@ -52,7 +52,7 @@
                 "issues": "https://github.com/Chemaclass/phel-cli-gui/issues",
                 "source": "https://github.com/Chemaclass/phel-cli-gui/tree/master"
             },
-            "time": "2022-06-20T18:54:16+00:00"
+            "time": "2022-06-20T20:42:53+00:00"
         },
         {
             "name": "gacela-project/gacela",
@@ -1739,6 +1739,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
+        "php": ">=8.0",
         "ext-readline": "*"
     },
     "platform-dev": [],
