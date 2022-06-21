@@ -24,7 +24,7 @@
 (def snake-tail-icon {:text "x" :style "snake"})
 
 (defn sleep-delay [snake]
-  (let [velocity (* (snake :points) 15000)
+  (let [velocity (* (snake :speed) 15000)
         nano-sec (- nano-seconds-delay velocity)]
     (php/usleep nano-sec)))
 
@@ -44,7 +44,7 @@
         y-center (php/round (/ (board :height) 2))]
     (render-snake snake)
     (render x-center y-center game-over-text)
-    (render x-center (inc y-center) (format "Points: %d" (snake :points)))
+    (render x-center (inc y-center) (format "Points: %d" (snake :speed)))
     (throw (php/new RuntimeException "So much fun!"))))
 
 (defn playing-time []
@@ -53,7 +53,7 @@
 
 (defn render-stats [board snake]
   (clear-line (+ 2 (board :height)))
-  (render 0 (+ 2 (board :height)) (format "Level: %d" (snake :points)))
+  (render 0 (+ 2 (board :height)) (format "Speed: %d" (count (snake :tail))))
   (clear-line (+ 3 (board :height)))
   (render 0 (+ 3 (board :height)) (playing-time)))
 
@@ -65,9 +65,9 @@
   (clear-screen)
   (loop [board {:width 40 :height 20}
          snake {:direction :right
+                :speed 1
                 :head {:x 2 :y 2}
-                :tail []
-                :points 0}
+                :tail []}
          goal (generate-new-goal board)]
 
     (sleep-delay snake)
@@ -89,7 +89,7 @@
 
       (let [new-goal? (not= goal updated-goal)
             sn (if new-goal?
-                 (update updated-snake :points inc)
+                 (update updated-snake :speed inc)
                  updated-snake)
             sn2 (if new-goal? (grow-snake sn) sn)]
         (recur board sn2 updated-goal)))))
