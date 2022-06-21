@@ -4,15 +4,21 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bb4559438e1dbbb195ed8f83ad1e15ae",
+    "content-hash": "2ddea5d34f399189468715cd4c738f0c",
     "packages": [
         {
             "name": "chemaclass/phel-cli-gui",
             "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Chemaclass/phel-cli-gui.git",
+                "reference": "dc2fb1f871ba11a5ada607080105da68eda9c366"
+            },
             "dist": {
-                "type": "path",
-                "url": "/Users/jose.valera/Code/chemaclass/phel-cli-gui",
-                "reference": "96f1bab7b523aa2ee0ad24ff58ced70052b636cd"
+                "type": "zip",
+                "url": "https://api.github.com/repos/Chemaclass/phel-cli-gui/zipball/dc2fb1f871ba11a5ada607080105da68eda9c366",
+                "reference": "dc2fb1f871ba11a5ada607080105da68eda9c366",
+                "shasum": ""
             },
             "require": {
                 "ext-readline": "*",
@@ -24,12 +30,14 @@
                 "roave/security-advisories": "dev-latest",
                 "symfony/var-dumper": "5.4.x-dev"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
                     "PhelCliGui\\": "src/php/"
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -40,9 +48,11 @@
                 "lisp",
                 "phel"
             ],
-            "transport-options": {
-                "relative": false
-            }
+            "support": {
+                "issues": "https://github.com/Chemaclass/phel-cli-gui/issues",
+                "source": "https://github.com/Chemaclass/phel-cli-gui/tree/master"
+            },
+            "time": "2022-06-21T20:37:19+00:00"
         },
         {
             "name": "gacela-project/gacela",

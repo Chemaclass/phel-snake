@@ -17,12 +17,6 @@
         "roave/security-advisories": "dev-latest",
         "symfony/var-dumper": "5.4.x-dev"
     },
-    "repositories": {
-        "local": {
-            "type": "path",
-            "url": "/Users/jose.valera/Code/chemaclass/phel-cli-gui"
-        }
-    },
     "autoload": {
         "psr-4": {
             "PhelGenerated\\": "src/PhelGenerated"
