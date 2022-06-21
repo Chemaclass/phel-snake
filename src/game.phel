@@ -3,6 +3,7 @@
   (:require phel-cli-gui\terminal-gui :refer [add-output-formatter
                                               clear-screen
                                               clear-output
+                                              clear-line
                                               read-input
                                               render-board
                                               render])
@@ -50,17 +51,14 @@
   (let [diff-time (- (php/microtime true) start-time)]
     (format "Time: %d secs" (php/round diff-time))))
 
-(defn clean-line [y]
-  (render 0 y (php/str_repeat " " 100)))
-
 (defn render-stats [board snake]
-  (clean-line (+ 2 (board :height)))
+  (clear-line (+ 2 (board :height)))
   (render 0 (+ 2 (board :height)) (format "Level: %d" (snake :points)))
-  (clean-line (+ 3 (board :height)))
+  (clear-line (+ 3 (board :height)))
   (render 0 (+ 3 (board :height)) (playing-time)))
 
 (defn debug-snake [board snake]
-  (clean-line (+ 4 (board :height)))
+  (clear-line (+ 4 (board :height)))
   (render 0 (+ 4 (board :height)) (str "# snake" snake)))
 
 (defn main []
@@ -89,7 +87,6 @@
       (render-stats board updated-snake)
       (debug-snake board updated-snake)
 
-
       (let [new-goal? (not= goal updated-goal)
             sn (if new-goal?
                  (update updated-snake :points inc)
@@ -98,7 +95,6 @@
         (recur board sn2 updated-goal)))))
 
 (try
-
   (main)
   (catch RuntimeException e
     (println (php/-> e (getMessage)))))
