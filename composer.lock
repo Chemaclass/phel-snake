@@ -4,21 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2ddea5d34f399189468715cd4c738f0c",
+    "content-hash": "bb4559438e1dbbb195ed8f83ad1e15ae",
     "packages": [
         {
             "name": "chemaclass/phel-cli-gui",
             "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/Chemaclass/phel-cli-gui.git",
-                "reference": "96f1bab7b523aa2ee0ad24ff58ced70052b636cd"
-            },
             "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Chemaclass/phel-cli-gui/zipball/96f1bab7b523aa2ee0ad24ff58ced70052b636cd",
-                "reference": "96f1bab7b523aa2ee0ad24ff58ced70052b636cd",
-                "shasum": ""
+                "type": "path",
+                "url": "/Users/jose.valera/Code/chemaclass/phel-cli-gui",
+                "reference": "96f1bab7b523aa2ee0ad24ff58ced70052b636cd"
             },
             "require": {
                 "ext-readline": "*",
@@ -30,14 +24,12 @@
                 "roave/security-advisories": "dev-latest",
                 "symfony/var-dumper": "5.4.x-dev"
             },
-            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
                     "PhelCliGui\\": "src/php/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -48,11 +40,9 @@
                 "lisp",
                 "phel"
             ],
-            "support": {
-                "issues": "https://github.com/Chemaclass/phel-cli-gui/issues",
-                "source": "https://github.com/Chemaclass/phel-cli-gui/tree/master"
-            },
-            "time": "2022-06-20T20:42:53+00:00"
+            "transport-options": {
+                "relative": false
+            }
         },
         {
             "name": "gacela-project/gacela",
@@ -1143,12 +1133,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Roave/SecurityAdvisories.git",
-                "reference": "0a2664d739af6996ce1a24a35cb59ed2bbd27f4b"
+                "reference": "bd1c2ed6f37c9a9e81417b8367865c0bbeabed55"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/0a2664d739af6996ce1a24a35cb59ed2bbd27f4b",
-                "reference": "0a2664d739af6996ce1a24a35cb59ed2bbd27f4b",
+                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/bd1c2ed6f37c9a9e81417b8367865c0bbeabed55",
+                "reference": "bd1c2ed6f37c9a9e81417b8367865c0bbeabed55",
                 "shasum": ""
             },
             "conflict": {
@@ -1289,7 +1279,7 @@
                 "gree/jose": "<=2.2",
                 "gregwar/rst": "<1.0.3",
                 "grumpydictator/firefly-iii": "<5.6.5",
-                "guzzlehttp/guzzle": "<6.5.7|>=7,<7.4.4",
+                "guzzlehttp/guzzle": "<6.5.8|>=7,<7.4.5",
                 "guzzlehttp/psr7": "<1.8.4|>=2,<2.1.1",
                 "helloxz/imgurl": "= 2.31|<=2.31",
                 "hillelcoren/invoice-ninja": "<5.3.35",
@@ -1636,7 +1626,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-06-17T21:04:24+00:00"
+            "time": "2022-06-21T17:12:40+00:00"
         },
         {
             "name": "symfony/var-dumper",

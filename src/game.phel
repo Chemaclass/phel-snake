@@ -1,4 +1,5 @@
 (ns phel-snake\game
+  (:use RuntimeException)
   (:require phel-cli-gui\terminal-gui :refer [add-output-formatter
                                               clear-screen
                                               read-input
@@ -41,7 +42,7 @@
         y-center (php/round (/ (board :height) 2))]
     (render x-center y-center game-over-text)
     (render x-center (inc y-center) (format "Points: %d" (snake :points)))
-    (php/die "So much fun!\n")))
+    (throw (php/new RuntimeException "So much fun!"))))
 
 (defn playing-time []
   (let [diff-time (- (php/microtime true) start-time)]
@@ -83,7 +84,7 @@
       (render-snake updated-snake)
       (render-goal updated-goal)
       (render-stats board updated-snake)
-#      (debug-snake board updated-snake)
+      (debug-snake board updated-snake)
 
       (let [new-goal? (not= goal updated-goal)
             sn (if new-goal?
@@ -92,4 +93,7 @@
             sn2 (if new-goal? (grow-snake sn) sn)]
         (recur board sn2 updated-goal)))))
 
-(main)
+(try
+  (main)
+  (catch RuntimeException e
+    (println (php/-> e (getMessage)))))
