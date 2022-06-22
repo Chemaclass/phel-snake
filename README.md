@@ -8,8 +8,6 @@ A cli-game written in [Phel](https://phel-lang.org/).
 2) Install the dependencies: `composer install`
 3) Run the game: `vendor/bin/phel run src/game.phel`
 
-### Screenshots
+#### Demo
 
-<p align="center">
-  <img src="img/demo.png"/>
-</p>
+![](img/demo-snake.webp)

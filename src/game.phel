@@ -53,7 +53,7 @@
         x-center (php/round (- (/ (board :width) 2) (/ game-over-text-len 2)))
         y-center (php/round (/ (board :height) 2))]
     (render-snake snake)
-    (debug-snake board snake)
+#    (debug-snake board snake)
     (render x-center y-center game-over-text)
     (render x-center (inc y-center) (format "Points: %d" (snake :speed)))
     (throw (php/new RuntimeException "So much fun!"))))
@@ -92,6 +92,7 @@
       (render-snake updated-snake)
       (render-goal updated-goal)
       (render-stats board updated-snake)
+#      (debug-snake board updated-snake)
 
       (let [new-goal? (not= goal updated-goal)
             sn (if new-goal?
