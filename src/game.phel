@@ -39,10 +39,10 @@
     (php/usleep nano-sec)))
 
 (defn render-snake [snake]
-  (let [head (snake :head)]
-    (render (head :x) (head :y) (snake-head-icon :text) (snake-head-icon :style)))
   (for [t :in (snake :tail)]
-    (render (t :x) (t :y) (snake-tail-icon :text) (snake-tail-icon :style))))
+    (render (t :x) (t :y) (snake-tail-icon :text) (snake-tail-icon :style)))
+  (let [head (snake :head)]
+    (render (head :x) (head :y) (snake-head-icon :text) (snake-head-icon :style))))
 
 (defn render-goal [goal]
   (render (goal :x) (goal :y) (goal-icon :text) (goal-icon :style)))
