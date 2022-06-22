@@ -14,18 +14,27 @@
                                      collision-with-board?
                                      grow-snake]))
 
-(add-output-formatter {:style-name "snake" :foreground "green" :background "black" :options ["bold"]})
-(add-output-formatter {:style-name "goal" :foreground "magenta" :background "black" :options ["bold"]})
+(add-output-formatter {:style-name "snake-head" :foreground "black" :background "red" :options ["bold"]})
+(add-output-formatter {:style-name "snake-tail" :foreground "black" :background "green" :options ["bold"]})
+(add-output-formatter {:style-name "goal" :foreground "black" :background "magenta" :options ["bold"]})
 
+(def difficulty
+  "The higher the faster it will increase the speed on each level."
+  10000)
+
+(def nano-seconds-delay-base 100000)
 (def start-time (php/microtime true))
-(def nano-seconds-delay 100000)
-(def goal-icon {:text "A" :style "goal"})
-(def snake-head-icon {:text "X" :style "snake"})
-(def snake-tail-icon {:text "x" :style "snake"})
+(def goal-icon {:text " " :style "goal"})
+(def snake-head-icon {:text " " :style "snake-head"})
+(def snake-tail-icon {:text " " :style "snake-tail"})
+
+(defn debug-snake [board snake]
+  (clear-line (+ 3 (board :height)))
+  (render 0 (+ 3 (board :height)) (str "# snake" snake)))
 
 (defn sleep-delay [snake]
-  (let [velocity (* (snake :speed) 15000)
-        nano-sec (- nano-seconds-delay velocity)]
+  (let [velocity (* (snake :speed) difficulty)
+        nano-sec (- nano-seconds-delay-base velocity)]
     (php/usleep nano-sec)))
 
 (defn render-snake [snake]
@@ -43,6 +52,7 @@
         x-center (php/round (- (/ (board :width) 2) (/ game-over-text-len 2)))
         y-center (php/round (/ (board :height) 2))]
     (render-snake snake)
+    (debug-snake board snake)
     (render x-center y-center game-over-text)
     (render x-center (inc y-center) (format "Points: %d" (snake :speed)))
     (throw (php/new RuntimeException "So much fun!"))))
@@ -52,18 +62,14 @@
     (format "Time: %d secs" (php/round diff-time))))
 
 (defn render-stats [board snake]
+  (clear-line (+ 1 (board :height)))
+  (render 0 (+ 1 (board :height)) (format "Speed: %d" (count (snake :tail))))
   (clear-line (+ 2 (board :height)))
-  (render 0 (+ 2 (board :height)) (format "Speed: %d" (count (snake :tail))))
-  (clear-line (+ 3 (board :height)))
-  (render 0 (+ 3 (board :height)) (playing-time)))
-
-(defn debug-snake [board snake]
-  (clear-line (+ 4 (board :height)))
-  (render 0 (+ 4 (board :height)) (str "# snake" snake)))
+  (render 0 (+ 2 (board :height)) (playing-time)))
 
 (defn main []
   (clear-screen)
-  (loop [board {:width 40 :height 20}
+  (loop [board {:width 45 :height 20}
          snake {:direction :right
                 :speed 1
                 :head {:x 2 :y 2}
@@ -85,7 +91,7 @@
       (render-snake updated-snake)
       (render-goal updated-goal)
       (render-stats board updated-snake)
-      (debug-snake board updated-snake)
+#      (debug-snake board updated-snake)
 
       (let [new-goal? (not= goal updated-goal)
             sn (if new-goal?
