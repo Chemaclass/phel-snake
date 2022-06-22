@@ -8,6 +8,7 @@
                                               render-board
                                               render])
   (:require phel-snake\logic :refer [generate-new-goal
+                                     generate-snake-head
                                      normalize-next-direction
                                      move-snake
                                      update-goal
@@ -72,7 +73,7 @@
   (loop [board {:width 45 :height 20}
          snake {:direction :right
                 :speed 1
-                :head {:x 2 :y 2}
+                :head (generate-snake-head board)
                 :tail []}
          goal (generate-new-goal board)]
 
@@ -91,7 +92,6 @@
       (render-snake updated-snake)
       (render-goal updated-goal)
       (render-stats board updated-snake)
-#      (debug-snake board updated-snake)
 
       (let [new-goal? (not= goal updated-goal)
             sn (if new-goal?

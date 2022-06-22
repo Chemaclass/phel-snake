@@ -54,6 +54,9 @@
       (recur {:width width :height height})
       pos)))
 
+(defn generate-snake-head [{:height height}]
+  (generate-new-goal {:width 5 :height height}))
+
 (defn- snake-reach-goal? [snake goal]
   (and
    (= (get-in snake [:head :x]) (goal :x))
