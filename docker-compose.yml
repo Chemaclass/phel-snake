@@ -8,4 +8,4 @@ services:
     container_name: phel_snake
     hostname: php
     volumes:
-      - .:/srv/phel-snake:delegated
+      - .:/app/phel-snake:delegated
