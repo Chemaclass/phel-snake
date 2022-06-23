@@ -9,3 +9,4 @@ services:
     hostname: php
     volumes:
       - .:/app:delegated
+      - /app/vendor
