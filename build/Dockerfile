@@ -2,8 +2,12 @@ FROM php:8.1-fpm
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y git
+    apt-get install -y \
+    libzip-dev \
+    zip \
+  && docker-php-ext-install zip
 
-RUN useradd -m dev
-COPY . /app
+COPY .. /app
 WORKDIR /app
+
+RUN tools/composer install

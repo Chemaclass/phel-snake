@@ -7,10 +7,8 @@ A cli-game written in [Phel](https://phel-lang.org/).
 #### Using Docker
 
 1. Clone this repo
-2. Build the image: `docker-compose up --build -d`
-3. Enter inside the container: `docker exec -ti -u dev phel_snake bash`
-4. Install the dependencies: `tools/composer install`
-5. Run the game: `vendor/bin/phel run src/game.phel`
+2. Build the image and run the container: `docker-compose up --build -d`
+3. Run the game: `docker exec -it phel_snake ./tools/composer start`
 
 #### Locally (no Docker)
 
