@@ -8,7 +8,7 @@ A cli-game written in [Phel](https://phel-lang.org/).
 
 1. Clone this repo
 2. Build the image and run the container: `docker-compose up --build -d`
-3. Run the game: `docker exec -it ./tools/composer start`
+3. Run the game: `docker exec -it phel_snake ./tools/composer start`
 
 #### Locally (no Docker)
 
