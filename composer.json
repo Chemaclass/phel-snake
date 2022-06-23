@@ -17,6 +17,9 @@
         "roave/security-advisories": "dev-latest",
         "symfony/var-dumper": "5.4.x-dev"
     },
+    "scripts": {
+        "start": "vendor/bin/phel run src/game.phel"
+    },
     "autoload": {
         "psr-4": {
             "PhelGenerated\\": "src/PhelGenerated"
