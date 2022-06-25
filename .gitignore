@@ -1,3 +1,5 @@
-.phel-repl-history
 src/PhelGenerated/
 vendor/
+
+.phel-repl-history
+*.cache

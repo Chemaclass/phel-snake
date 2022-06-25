@@ -10,7 +10,7 @@
     "require": {
         "php": ">=8.0",
         "ext-readline": "*",
-        "phel-lang/phel-lang": "^0.7",
+        "phel-lang/phel-lang": "dev-master",
         "chemaclass/phel-cli-gui": "dev-master"
     },
     "require-dev": {
@@ -18,7 +18,8 @@
         "symfony/var-dumper": "5.4.x-dev"
     },
     "scripts": {
-        "start": "vendor/bin/phel run src/game.phel"
+        "start": "vendor/bin/phel run src/game.phel",
+        "test": "vendor/bin/phel test"
     },
     "autoload": {
         "psr-4": {
