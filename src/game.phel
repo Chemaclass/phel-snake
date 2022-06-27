@@ -17,8 +17,8 @@
   "The higher the faster it will increase the speed on each level."
   10000)
 
-(def debug? true)
-(def nano-seconds-delay-base 100000)
+(def debug? false)
+(def nano-seconds-delay-base 140000)
 (def start-time (php/microtime true))
 (def goal-icon {:text " " :style "goal"})
 (def snake-head-icon {:text " " :style "snake-head"})
@@ -30,8 +30,15 @@
 
 (defn sleep-delay [snake]
   (let [velocity (* (snake :speed) difficulty)
-        nano-sec (- nano-seconds-delay-base velocity)]
-    (php/usleep nano-sec)))
+        nano-sec (- nano-seconds-delay-base velocity)
+        velocity-normalizer (case (snake :direction)
+                              :left 2 :right 2
+                              :up 1 :down 1)
+        sleep-time (/ nano-sec velocity-normalizer)]
+    (if debug? (do (println)
+                   (println "# sleep-time: " sleep-time ", velocity-normalizer: " velocity-normalizer)
+                   (println)(println)(println "playing...")))
+    (php/usleep sleep-time)))
 
 (defn render-snake [snake]
   (for [t :in (snake :tail)]
@@ -51,21 +58,19 @@
     (debug-snake board snake)
     (terminal-gui/render x-center y-center game-over-text)
     (terminal-gui/render x-center (inc y-center) (format "Points: %d" (snake :speed)))
-    (throw (php/new RuntimeException "So much fun!"))))
+    (throw (php/new RuntimeException "\n\nSo much fun!"))))
 
 (defn playing-time []
   (let [diff-time (- (php/microtime true) start-time)]
     (format "Time: %d secs" (php/round diff-time))))
 
 (defn render-stats [board snake]
-  (terminal-gui/clear-line (+ 1 (board :height)))
-  (terminal-gui/render 0 (+ 1 (board :height)) (format "Speed: %d" (count (snake :tail))))
-  (terminal-gui/clear-line (+ 2 (board :height)))
-  (terminal-gui/render 0 (+ 2 (board :height)) (playing-time)))
+  (println (format "Speed: %d" (count (snake :tail))))
+  (println (playing-time)))
 
 (defn main []
   (terminal-gui/clear-screen)
-  (loop [board {:width 45 :height 20}
+  (loop [board {:width 42 :height 22}
          snake {:direction :right
                 :speed 1
                 :head (generate-snake-head board)
