@@ -17,6 +17,7 @@
   "The higher the faster it will increase the speed on each level."
   10000)
 
+(def debug? true)
 (def nano-seconds-delay-base 100000)
 (def start-time (php/microtime true))
 (def goal-icon {:text " " :style "goal"})
@@ -24,8 +25,8 @@
 (def snake-tail-icon {:text " " :style "snake-tail"})
 
 (defn debug-snake [board snake]
-  (terminal-gui/clear-line (+ 3 (board :height)))
-  (terminal-gui/render 0 (+ 3 (board :height)) (str "# snake" snake)))
+  (if debug? (do (terminal-gui/clear-line (+ 3 (board :height)))
+                 (terminal-gui/render 0 (+ 3 (board :height)) (str "# snake" snake)))))
 
 (defn sleep-delay [snake]
   (let [velocity (* (snake :speed) difficulty)
@@ -47,7 +48,7 @@
         x-center (php/round (- (/ (board :width) 2) (/ game-over-text-len 2)))
         y-center (php/round (/ (board :height) 2))]
     (render-snake snake)
-#    (debug-snake board snake)
+    (debug-snake board snake)
     (terminal-gui/render x-center y-center game-over-text)
     (terminal-gui/render x-center (inc y-center) (format "Points: %d" (snake :speed)))
     (throw (php/new RuntimeException "So much fun!"))))
@@ -86,7 +87,7 @@
       (render-snake updated-snake)
       (render-goal updated-goal)
       (render-stats board updated-snake)
-#      (debug-snake board updated-snake)
+      (debug-snake board updated-snake)
 
       (let [new-goal? (not= goal updated-goal)
             sn (if new-goal?
@@ -98,4 +99,5 @@
 (try
   (main)
   (catch RuntimeException e
+    (println)
     (println (php/-> e (getMessage)))))
