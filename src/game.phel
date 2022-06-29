@@ -1,6 +1,6 @@
 (ns phel-snake\game
   (:use RuntimeException)
-  (:require phel-cli-gui\terminal-gui)
+  (:require phel-cli-gui\terminal-gui :as gui)
   (:require phel-snake\logic :refer [generate-new-goal
                                      generate-snake-head
                                      normalize-next-direction
@@ -9,9 +9,9 @@
                                      collision-with-board?
                                      grow-snake]))
 
-(terminal-gui/add-output-formatter {:style-name "snake-head" :foreground "black" :background "red" :options ["bold"]})
-(terminal-gui/add-output-formatter {:style-name "snake-tail" :foreground "black" :background "green" :options ["bold"]})
-(terminal-gui/add-output-formatter {:style-name "goal" :foreground "black" :background "magenta" :options ["bold"]})
+(gui/add-output-formatter {:style-name "snake-head" :foreground "black" :background "red" :options ["bold"]})
+(gui/add-output-formatter {:style-name "snake-tail" :foreground "black" :background "green" :options ["bold"]})
+(gui/add-output-formatter {:style-name "goal" :foreground "black" :background "magenta" :options ["bold"]})
 
 (def difficulty
   "The higher the faster it will increase the speed on each level."
@@ -25,8 +25,8 @@
 (def snake-tail-icon {:text " " :style "snake-tail"})
 
 (defn debug-snake [board snake]
-  (if debug? (do (terminal-gui/clear-line (+ 3 (board :height)))
-                 (terminal-gui/render 0 (+ 3 (board :height)) (str "# snake" snake)))))
+  (if debug? (do (gui/clear-line (+ 3 (board :height)))
+                 (gui/render 0 (+ 3 (board :height)) (str "# snake" snake)))))
 
 (defn sleep-delay [snake]
   (let [velocity (* (snake :speed) difficulty)
@@ -42,12 +42,12 @@
 
 (defn render-snake [snake]
   (for [t :in (snake :tail)]
-    (terminal-gui/render (t :x) (t :y) (snake-tail-icon :text) (snake-tail-icon :style)))
+    (gui/render (t :x) (t :y) (snake-tail-icon :text) (snake-tail-icon :style)))
   (let [head (snake :head)]
-    (terminal-gui/render (head :x) (head :y) (snake-head-icon :text) (snake-head-icon :style))))
+    (gui/render (head :x) (head :y) (snake-head-icon :text) (snake-head-icon :style))))
 
 (defn render-goal [goal]
-  (terminal-gui/render (goal :x) (goal :y) (goal-icon :text) (goal-icon :style)))
+  (gui/render (goal :x) (goal :y) (goal-icon :text) (goal-icon :style)))
 
 (defn render-game-over [board snake]
   (let [game-over-text "GAME OVER"
@@ -56,8 +56,8 @@
         y-center (php/round (/ (board :height) 2))]
     (render-snake snake)
     (debug-snake board snake)
-    (terminal-gui/render x-center y-center game-over-text)
-    (terminal-gui/render x-center (inc y-center) (format "Points: %d" (snake :speed)))
+    (gui/render x-center y-center game-over-text)
+    (gui/render x-center (inc y-center) (format "Points: %d" (snake :speed)))
     (throw (php/new RuntimeException "\n\nSo much fun!"))))
 
 (defn playing-time []
@@ -69,7 +69,7 @@
   (println (playing-time)))
 
 (defn main []
-  (terminal-gui/clear-screen)
+  (gui/clear-screen)
   (loop [board {:width 42 :height 22}
          snake {:direction :right
                 :speed 1
@@ -78,10 +78,10 @@
          goal (generate-new-goal board)]
 
     (sleep-delay snake)
-    (terminal-gui/clear-output)
-    (terminal-gui/render-board board)
+    (gui/clear-output)
+    (gui/render-board board)
 
-    (let [{:hex in} (terminal-gui/read-input 3)
+    (let [{:hex in} (gui/read-input 3)
           next-direction (normalize-next-direction in)
           updated-goal (update-goal snake goal board)
           updated-snake (move-snake snake next-direction)]

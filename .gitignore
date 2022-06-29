@@ -1,5 +1,6 @@
 src/PhelGenerated/
 vendor/
+out/
 
 .phel-repl-history
 *.cache
