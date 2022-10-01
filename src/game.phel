@@ -9,9 +9,6 @@
                                      collision-with-board?
                                      grow-snake]))
 
-(php/dump "Chema :DDDDDDD")
-(php/dump argv)
-
 (gui/add-output-formatter {:style-name "snake-head" :foreground "black" :background "red" :options ["bold"]})
 (gui/add-output-formatter {:style-name "snake-tail" :foreground "black" :background "green" :options ["bold"]})
 (gui/add-output-formatter {:style-name "goal" :foreground "black" :background "magenta" :options ["bold"]})
@@ -112,7 +109,6 @@
         flipped-array (php/array_flip php-array)
         flipped (php-array-to-map flipped-array)]
     (contains? flipped val)))
-
 
 (if (true? (contains-value? argv "play"))
   (try

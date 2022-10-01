@@ -18,7 +18,12 @@
         "symfony/var-dumper": "5.4.x-dev"
     },
     "scripts": {
-        "start": "vendor/bin/phel run src/game.phel play",
+        "start": [
+            "@compile",
+            "@play"
+        ],
+        "compile": "vendor/bin/phel compile --no-cache",
+        "play": "php play.php",
         "test": "vendor/bin/phel test"
     },
     "autoload": {
