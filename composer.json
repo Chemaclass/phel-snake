@@ -18,7 +18,7 @@
         "symfony/var-dumper": "5.4.x-dev"
     },
     "scripts": {
-        "start": "vendor/bin/phel run src/game.phel",
+        "start": "vendor/bin/phel run src/game.phel play",
         "test": "vendor/bin/phel test"
     },
     "autoload": {
