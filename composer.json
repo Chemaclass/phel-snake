@@ -10,7 +10,7 @@
     "require": {
         "php": ">=8.0",
         "ext-readline": "*",
-        "phel-lang/phel-lang": "dev-master",
+        "phel-lang/phel-lang": "dev-feature/main-ns-global-constant",
         "chemaclass/phel-cli-gui": "dev-master"
     },
     "require-dev": {
@@ -22,7 +22,7 @@
             "@compile",
             "@play"
         ],
-        "compile": "vendor/bin/phel compile --no-cache",
+        "compile": "vendor/bin/phel compile --no-cache --main-ns='phel-snake\\game'",
         "play": "php play.php",
         "test": "vendor/bin/phel test"
     },

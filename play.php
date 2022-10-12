@@ -8,5 +8,5 @@ $compiledFile = __DIR__ . "/out/phel_snake/game.php";
 if (!file_exists($compiledFile)) {
     exit('You have to compile the game first. Try with: `composer compile`');
 }
-$GLOBALS['argv'][] = 'play';
+
 require_once $compiledFile;
