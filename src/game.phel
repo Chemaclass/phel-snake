@@ -101,7 +101,7 @@
             sn2 (if new-goal? (grow-snake sn) sn)]
         (recur board sn2 updated-goal)))))
 
-(when-not (and *compile-mode* (= __MAIN_NS__ "phel-snake\\game"))
+(when-not *compile-mode*
   (try
     (main)
     (catch RuntimeException e

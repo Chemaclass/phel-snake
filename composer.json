@@ -10,7 +10,7 @@
     "require": {
         "php": ">=8.0",
         "ext-readline": "*",
-        "phel-lang/phel-lang": "dev-feature/main-ns-global-constant",
+        "phel-lang/phel-lang": "dev-master",
         "chemaclass/phel-cli-gui": "dev-master"
     },
     "require-dev": {
@@ -22,7 +22,7 @@
             "@compile",
             "@play"
         ],
-        "compile": "vendor/bin/phel compile --no-cache --main-ns='phel-snake\\game'",
+        "compile": "vendor/bin/phel compile --no-cache",
         "play": "php play.php",
         "test": "vendor/bin/phel test"
     },
@@ -31,5 +31,11 @@
             "PhelGenerated\\": "src/PhelGenerated"
         }
     },
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "config": {
+        "preferred-install": "dist",
+        "platform": {
+            "php": "8.0.24"
+        }
+    }
 }
