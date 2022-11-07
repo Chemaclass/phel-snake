@@ -1,6 +1,8 @@
+.gacela/
 src/PhelGenerated/
 vendor/
 out/
 
-.phel-repl-history
 *.cache
+.phel-repl-history
+gacela-local.php
