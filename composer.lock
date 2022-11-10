@@ -56,16 +56,16 @@
         },
         {
             "name": "gacela-project/gacela",
-            "version": "0.30.0",
+            "version": "0.30.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/gacela-project/gacela.git",
-                "reference": "3956de4e24429cca59982cd6a9ac7225dce97b23"
+                "reference": "d5043873e8edd8f20b8368454e7455ce6708fed6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gacela-project/gacela/zipball/3956de4e24429cca59982cd6a9ac7225dce97b23",
-                "reference": "3956de4e24429cca59982cd6a9ac7225dce97b23",
+                "url": "https://api.github.com/repos/gacela-project/gacela/zipball/d5043873e8edd8f20b8368454e7455ce6708fed6",
+                "reference": "d5043873e8edd8f20b8368454e7455ce6708fed6",
                 "shasum": ""
             },
             "require": {
@@ -119,7 +119,7 @@
             ],
             "support": {
                 "issues": "https://github.com/gacela-project/gacela/issues",
-                "source": "https://github.com/gacela-project/gacela/tree/0.30.0"
+                "source": "https://github.com/gacela-project/gacela/tree/0.30.1"
             },
             "funding": [
                 {
@@ -127,7 +127,7 @@
                     "type": "custom"
                 }
             ],
-            "time": "2022-11-07T08:28:58+00:00"
+            "time": "2022-11-09T18:24:20+00:00"
         },
         {
             "name": "phel-lang/phel-lang",
@@ -135,12 +135,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/phel-lang/phel-lang.git",
-                "reference": "c607c2a44b1fff2dc0f251c13b28f5bbc6e13f9c"
+                "reference": "3e41046427b99ef4a2cafba3488eb375d1e3f8ec"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phel-lang/phel-lang/zipball/c607c2a44b1fff2dc0f251c13b28f5bbc6e13f9c",
-                "reference": "c607c2a44b1fff2dc0f251c13b28f5bbc6e13f9c",
+                "url": "https://api.github.com/repos/phel-lang/phel-lang/zipball/3e41046427b99ef4a2cafba3488eb375d1e3f8ec",
+                "reference": "3e41046427b99ef4a2cafba3488eb375d1e3f8ec",
                 "shasum": ""
             },
             "require": {
@@ -156,6 +156,7 @@
                 "phpmetrics/phpmetrics": "^2.8",
                 "phpstan/phpstan": "^1.9",
                 "phpunit/phpunit": "^9.5",
+                "psalm/plugin-phpunit": "^0.17",
                 "symfony/var-dumper": "^5.4",
                 "vimeo/psalm": "^4.30"
             },
@@ -191,7 +192,7 @@
                 "issues": "https://github.com/phel-lang/phel-lang/issues",
                 "source": "https://github.com/phel-lang/phel-lang/tree/master"
             },
-            "time": "2022-11-07T09:19:55+00:00"
+            "time": "2022-11-09T19:19:59+00:00"
         },
         {
             "name": "phpunit/php-timer",
@@ -537,7 +538,7 @@
                 "portable"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-ctype/tree/main"
+                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.27.0"
             },
             "funding": [
                 {
@@ -619,7 +620,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-intl-grapheme/tree/main"
+                "source": "https://github.com/symfony/polyfill-intl-grapheme/tree/v1.27.0"
             },
             "funding": [
                 {
@@ -704,7 +705,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-intl-normalizer/tree/main"
+                "source": "https://github.com/symfony/polyfill-intl-normalizer/tree/v1.27.0"
             },
             "funding": [
                 {
@@ -788,7 +789,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-mbstring/tree/main"
+                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.27.0"
             },
             "funding": [
                 {
@@ -868,7 +869,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-php73/tree/main"
+                "source": "https://github.com/symfony/polyfill-php73/tree/v1.27.0"
             },
             "funding": [
                 {
@@ -952,7 +953,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-php80/tree/main"
+                "source": "https://github.com/symfony/polyfill-php80/tree/v1.27.0"
             },
             "funding": [
                 {
