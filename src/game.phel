@@ -17,7 +17,7 @@
   "The higher the faster it will increase the speed on each level."
   10000)
 
-(def debug? false)
+(def debug? (php/in_array "debug" argv))
 (def nano-seconds-delay-base 140000)
 (def start-time (php/microtime true))
 (def goal-icon {:text " " :style "goal"})
