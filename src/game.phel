@@ -7,7 +7,8 @@
                                      move-snake
                                      update-goal
                                      collision-with-board?
-                                     grow-snake]))
+                                     grow-snake
+                                     extract-value-from-arg]))
 
 (gui/add-output-formatter {:style-name "snake-head" :foreground "black" :background "red" :options ["bold"]})
 (gui/add-output-formatter {:style-name "snake-tail" :foreground "black" :background "green" :options ["bold"]})
@@ -17,7 +18,6 @@
   "The higher the faster it will increase the speed on each level."
   10000)
 
-(php/dd argv) # 42
 (def board-width (extract-value-from-arg argv "width" 42))
 (def board-height (extract-value-from-arg argv "height" 22))
 (def debug? (php/in_array "debug" argv))
@@ -73,7 +73,6 @@
 
 (defn main []
   (gui/clear-screen)
-#  (loop [board {:width 42 :height 22}
   (loop [board {:width board-width :height board-height}
          snake {:direction :right
                 :speed 1

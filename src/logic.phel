@@ -68,5 +68,7 @@
     goal))
 
 (defn extract-value-from-arg [args key default]
-    default
-  )
+  (let [arg (find |(php/str_contains $ key) args)]
+    (if (empty? arg)
+        default
+        (php/intval (get (php/explode "=" arg) 1)))))
