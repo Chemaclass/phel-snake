@@ -17,6 +17,9 @@
   "The higher the faster it will increase the speed on each level."
   10000)
 
+(php/dd argv) # 42
+(def board-width (extract-value-from-arg argv "width" 42))
+(def board-height (extract-value-from-arg argv "height" 22))
 (def debug? (php/in_array "debug" argv))
 (def nano-seconds-delay-base 140000)
 (def start-time (php/microtime true))
@@ -70,7 +73,8 @@
 
 (defn main []
   (gui/clear-screen)
-  (loop [board {:width 42 :height 22}
+#  (loop [board {:width 42 :height 22}
+  (loop [board {:width board-width :height board-height}
          snake {:direction :right
                 :speed 1
                 :head (generate-snake-head board)

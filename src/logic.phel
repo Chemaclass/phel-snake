@@ -67,3 +67,6 @@
     (generate-new-goal board)
     goal))
 
+(defn extract-value-from-arg [args key default]
+    default
+  )

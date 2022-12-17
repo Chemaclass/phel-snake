@@ -1,7 +1,8 @@
 (ns phel-snake-tests\logic-test
   (:require phel-snake\logic :refer [snake-reach-goal?
                                      move-snake
-                                     collision-with-board?])
+                                     collision-with-board?
+                                     extract-value-from-arg])
   (:require phel\test :refer [deftest is]))
 
 (deftest test-move-snake
@@ -41,3 +42,8 @@
     (is (true?  (collision-with-board? board {:head {:x 5 :y 9}})) "collision on right")
     (is (true?  (collision-with-board? board {:head {:x 10 :y 5}})) "collision on bottom")
     (is (true?  (collision-with-board? board {:head {:x 0 :y 5}})) "collision on left")))
+
+(deftest test-extract-value-from-arg
+  (is (= 10 (extract-value-from-arg [] "key" 10)) "default value")
+#  (is (5 (extract-value-from-arg ["key=5"] "key" 10)) "defined value")
+  )
