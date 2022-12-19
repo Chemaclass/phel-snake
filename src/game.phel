@@ -1,14 +1,7 @@
 (ns phel-snake\game
   (:use RuntimeException)
   (:require phel-cli-gui\terminal-gui :as gui)
-  (:require phel-snake\logic :refer [generate-new-goal
-                                     generate-snake-head
-                                     normalize-next-direction
-                                     move-snake
-                                     update-goal
-                                     collision-with-board?
-                                     grow-snake
-                                     extract-value-from-arg]))
+  (:require phel-snake\logic :as l))
 
 (gui/add-output-formatter {:style-name "snake-head" :foreground "black" :background "red" :options ["bold"]})
 (gui/add-output-formatter {:style-name "snake-tail" :foreground "black" :background "green" :options ["bold"]})
@@ -18,8 +11,8 @@
   "The higher the faster it will increase the speed on each level."
   10000)
 
-(def board-width (extract-value-from-arg argv "width" 42))
-(def board-height (extract-value-from-arg argv "height" 22))
+(def board-width (l/extract-value-from-arg argv "width" 42))
+(def board-height (l/extract-value-from-arg argv "height" 22))
 (def debug? (php/in_array "debug" argv))
 (def nano-seconds-delay-base 140000)
 (def start-time (php/microtime true))
@@ -76,20 +69,20 @@
   (loop [board {:width board-width :height board-height}
          snake {:direction :right
                 :speed 1
-                :head (generate-snake-head board)
+                :head (l/generate-snake-head board)
                 :tail []}
-         goal (generate-new-goal board)]
+         goal (l/generate-new-goal board)]
 
     (sleep-delay snake)
     (gui/clear-output)
     (gui/render-board board)
 
     (let [{:hex in} (gui/read-input 3)
-          next-direction (normalize-next-direction in)
-          updated-goal (update-goal snake goal board)
-          updated-snake (move-snake snake next-direction)]
+          next-direction (l/normalize-next-direction in)
+          updated-goal (l/update-goal snake goal board)
+          updated-snake (l/move-snake snake next-direction)]
 
-      (if (collision-with-board? board snake)
+      (if (l/collision-with-board? board snake)
         (render-game-over board snake))
 
       (render-snake updated-snake)
@@ -101,7 +94,7 @@
             sn (if new-goal?
                  (update updated-snake :speed inc)
                  updated-snake)
-            sn2 (if new-goal? (grow-snake sn) sn)]
+            sn2 (if new-goal? (l/grow-snake sn) sn)]
         (recur board sn2 updated-goal)))))
 
 (when-not *compile-mode*
