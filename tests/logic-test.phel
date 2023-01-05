@@ -2,7 +2,7 @@
   (:require phel-snake\logic :refer [snake-reach-goal?
                                      move-snake
                                      collision-with-board?
-                                     extract-value-from-arg])
+                                     get-from-list])
   (:require phel\test :refer [deftest is]))
 
 (deftest test-move-snake
@@ -43,7 +43,7 @@
     (is (true?  (collision-with-board? board {:head {:x 10 :y 5}})) "collision on bottom")
     (is (true?  (collision-with-board? board {:head {:x 0 :y 5}})) "collision on left")))
 
-(deftest test-extract-value-from-arg
-  (is (= 10 (extract-value-from-arg [] "key" 10)) "empty args results in default value")
-  (is (= 10 (extract-value-from-arg ["unknown=2"] "key" 10)) "unknown key results in default value")
-  (is (= 5 (extract-value-from-arg ["unknown=2" "key=5"] "key" 10)) "defined key results in defined value"))
+(deftest test-get-from-list
+  (is (= 10 (get-from-list [] "key" 10)) "empty args results in default value")
+  (is (= 10 (get-from-list ["unknown=2"] "key" 10)) "unknown key results in default value")
+  (is (= 5 (get-from-list ["unknown=2" "key=5"] "key" 10)) "defined key results in defined value"))

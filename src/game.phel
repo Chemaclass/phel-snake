@@ -11,8 +11,8 @@
   "The higher the faster it will increase the speed on each level."
   10000)
 
-(def board-width (l/extract-value-from-arg argv "width" 42))
-(def board-height (l/extract-value-from-arg argv "height" 22))
+(def board-width (l/get-from-list argv "width" 42))
+(def board-height (l/get-from-list argv "height" 22))
 (def debug? (php/in_array "debug" argv))
 (def nano-seconds-delay-base 140000)
 (def start-time (php/microtime true))
