@@ -32,7 +32,7 @@
                               :up 1 :down 1)
         sleep-time (/ nano-sec velocity-normalizer)]
     (if debug? (do (println)
-                   (println "# sleep-time: " sleep-time ", velocity-normalizer: " velocity-normalizer)
+                   (println "# sleep-time:" sleep-time "| velocity-normalizer:" velocity-normalizer)
                    (println)(println)(println "playing...")))
     (php/usleep sleep-time)))
 
