@@ -1,6 +1,7 @@
 (ns phel-snake-tests\logic-test
   (:require phel-snake\logic :refer [snake
                                      snake-reach-goal?
+                                     grow-snake
                                      move-snake
                                      collision-with-board?
                                      get-from-list])
@@ -18,6 +19,10 @@
            (move-snake s :up)))
     (is (= (snake :down 1 {:x 5 :y 6} [{:x 4 :y 5} {:x 5 :y 5}])
            (move-snake s :down)))))
+
+(deftest test-grow-snake-right
+  (is (=             (snake :right 1 {:x 4 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
+         (grow-snake (snake :right 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
 
 (deftest test-snake-reach-goal?
   (let [goal {:x 2 :y 2}]

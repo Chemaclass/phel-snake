@@ -1,5 +1,10 @@
 (ns phel-snake\logic)
 
+(defn dd
+  "Dump and die."
+  [x]
+  (println x)(php/die))
+
 (def- key-left-arrow "1b5b44")
 (def- key-down-arrow "1b5b42")
 (def- key-right-arrow "1b5b43")
@@ -43,12 +48,12 @@
           s3 (put s2 :tail new-tail)]
       (put s3 :direction next-direction))))
 
-(defn collision-with-board? [board snake]
+(defn collision-with-board? [b s]
   (or
-   (>= 1 (get-in snake [:head :x]))
-   (>= 0 (get-in snake [:head :y]))
-   (= (board :width) (get-in snake [:head :x]))
-   (= (dec (board :height)) (get-in snake [:head :y]))))
+   (>= 1 (get-in s [:head :x]))
+   (>= 0 (get-in s [:head :y]))
+   (= (b :width) (get-in s [:head :x]))
+   (= (dec (b :height)) (get-in s [:head :y]))))
 
 (defn generate-new-goal [{:width width :height height}]
   (let [pos {:x (dec (rand-int width))
@@ -68,10 +73,10 @@
    (= (get-in snake [:head :x]) (goal :x))
    (= (get-in snake [:head :y]) (goal :y))))
 
-(defn update-goal [snake goal board]
-  (if (snake-reach-goal? snake goal)
-    (generate-new-goal board)
-    goal))
+(defn update-goal [s g b]
+  (if (snake-reach-goal? s g)
+    (generate-new-goal b)
+    g))
 
 (defn get-from-list [xs key default & [split]]
   (let [arg (find |(php/str_contains $ key) xs)]

@@ -77,23 +77,23 @@
 
     (let [{:hex in} (gui/read-input 3)
           next-direction (l/normalize-next-direction in)
-          updated-goal (l/update-goal (s :new) goal b)
-          updated-snake (l/move-snake s next-direction)]
+          g2 (l/update-goal (s :new) goal b)
+          s2 (l/move-snake (s :new) next-direction)]
 
       (if (l/collision-with-board? b (s :new))
         (render-game-over b (s :new)))
 
-      (render-snake updated-snake)
-      (render-goal updated-goal)
-      (render-stats b updated-snake)
-      (debug-snake b updated-snake)
+      (render-snake s2)
+      (render-goal g2)
+      (render-stats b s2)
+      (debug-snake b s2)
 
-      (let [new-goal? (not= goal updated-goal)
-            sn (if new-goal?
-                 (update updated-snake :speed inc)
-                 updated-snake)
-            sn2 (if new-goal? (l/grow-snake sn) sn)]
-        (recur b {:old s :new sn2} updated-goal)))))
+      (let [new-goal? (not= goal g2)
+            s3 (if new-goal?
+                 (put s2 :speed (inc :speed))
+                 s2)
+            s4 (if new-goal? (l/grow-snake s3) s3)]
+        (recur b {:old (s :new) :new s4} g2)))))
 
 (when-not *compile-mode*
   (try
