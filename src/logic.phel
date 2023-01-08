@@ -23,19 +23,25 @@
     # add head to the tail
     (update sn1 :tail |(push $ (snake :head)))))
 
-(defn move-snake [snake next-direction]
+(defstruct board [width height])
+(defstruct snake [direction speed head tail])
+
+(defn dd
+  "Dump and die."
+  [x]
+  (println x)(php/die))
+
+(defn move-snake [s next-direction]
   (if (nil? next-direction)
-    (recur snake (snake :direction))
-    (let [sn1 (case next-direction
-                :left (update-in snake [:head :x] dec)
-                :right (update-in snake [:head :x] inc)
-                :up (update-in snake [:head :y] dec)
-                :down (update-in snake [:head :y] inc))
-          # remove the last tail position
-          sn2 (update sn1 :tail |(slice $ 1))
-          # add head to the tail
-          sn3 (update sn2 :tail |(push $ (snake :head)))]
-      (merge sn3 {:direction next-direction}))))
+    (recur s (s :direction))
+    (let [s2 (case next-direction
+               :left (update-in s [:head :x] dec)
+               :right (update-in s [:head :x] inc)
+               :up (update-in s [:head :y] dec)
+               :down (update-in s [:head :y] inc))
+          new-tail (push (drop 1 (s2 :tail)) (s :head))
+          s3 (put s2 :tail new-tail)]
+      (put s3 :direction next-direction))))
 
 (defn collision-with-board? [board snake]
   (or

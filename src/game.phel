@@ -64,14 +64,11 @@
   (println (format "Speed: %d" (count (snake :tail))))
   (println (playing-time)))
 
-(defstruct board [width height])
-(defstruct snake [direction speed head tail])
-
 (defn main []
   (gui/clear-screen)
-  (loop [b (board board-width board-height)
+  (loop [b (l/board board-width board-height)
          s {:old {}
-            :new (snake :right 1 (l/generate-snake-head b) [])}
+            :new (l/snake :right 1 (l/generate-snake-head b) [])}
          goal (l/generate-new-goal b)]
 
     (sleep-delay (s :new))
@@ -81,7 +78,7 @@
     (let [{:hex in} (gui/read-input 3)
           next-direction (l/normalize-next-direction in)
           updated-goal (l/update-goal (s :new) goal b)
-          updated-snake (l/move-snake (s :new) next-direction)]
+          updated-snake (l/move-snake s next-direction)]
 
       (if (l/collision-with-board? b (s :new))
         (render-game-over b (s :new)))
