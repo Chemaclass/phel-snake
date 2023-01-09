@@ -28,7 +28,7 @@
     # add head to the tail
     (update sn1 :tail |(push $ (snake :head)))))
 
-(defstruct board [width height])
+(defstruct board [offset-width offset-height width height])
 (defstruct snake [direction speed head tail])
 
 (defn dd

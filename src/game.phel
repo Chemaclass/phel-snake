@@ -13,6 +13,9 @@
 
 (def board-width (l/get-from-list argv "width" 42))
 (def board-height (l/get-from-list argv "height" 22))
+(def board-offset-width "TODO: Not implemented yet" (l/get-from-list argv "x" 0))
+(def board-offset-height "TODO: Not implemented yet" (l/get-from-list argv "y" 0))
+
 (def debug? (php/in_array "debug" argv))
 (def nano-seconds-delay-base 140000)
 (def start-time (php/microtime true))
@@ -20,9 +23,10 @@
 (def snake-head-icon {:text " " :style "snake-head"})
 (def snake-tail-icon {:text " " :style "snake-tail"})
 
-(defn debug-snake [board snake]
-  (if debug? (do (gui/clear-line (+ 3 (board :height)))
-                 (gui/render 0 (+ 3 (board :height)) (str "# snake" snake)))))
+(defn debug-snake [b s]
+  (if debug? (do (gui/clear-line (+ 3 (b :height)))
+                 (let [text (str "$ " b "\n$ " s)]
+                   (println text)))))
 
 (defn sleep-delay [snake]
   (let [velocity (* (snake :speed) difficulty)
@@ -71,16 +75,18 @@
   (println (format "Speed: %d" (count (snake :tail))))
   (println (playing-time)))
 
+(def b (l/board board-offset-width board-offset-height board-width board-height))
+
 (defn main []
   (gui/clear-screen)
-  (loop [b (l/board board-width board-height)
-         s {:old {}
+  (gui/render-board b)
+
+  (loop [s {:old {}
             :new (l/snake :right 1 (l/generate-snake-head b) [])}
          g (l/generate-new-goal b)]
 
     (sleep-delay (s :new))
     (gui/clear-output)
-    (gui/render-board b)
 
     (let [{:hex in} (gui/read-input 3)
           next-direction (l/normalize-next-direction in)
@@ -99,7 +105,7 @@
       (let [new-goal? (not= g g2)
             s3 (if new-goal? (update s2 :speed inc) s2)
             s4 (if new-goal? (l/grow-snake s3) s3)]
-        (recur b {:old (s :new) :new s4} g2)))))
+        (recur {:old (s :new) :new s4} g2)))))
 
 (when-not *compile-mode*
   (try
