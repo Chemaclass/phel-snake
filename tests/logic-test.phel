@@ -21,8 +21,20 @@
            (move-snake s :down)))))
 
 (deftest test-grow-snake-right
-  (is (=             (snake :right 1 {:x 4 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
+  (is (= (snake :right 1 {:x 6 :y 5} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
          (grow-snake (snake :right 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
+
+(deftest test-grow-snake-left
+  (is (= (snake :left 1 {:x 4 :y 5} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
+         (grow-snake (snake :left 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
+
+(deftest test-grow-snake-up
+  (is (= (snake :up 1 {:x 5 :y 4} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
+         (grow-snake (snake :up 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
+
+(deftest test-grow-snake-down
+  (is (= (snake :down 1 {:x 5 :y 6} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
+         (grow-snake (snake :down 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
 
 (deftest test-snake-reach-goal?
   (let [goal {:x 2 :y 2}]
