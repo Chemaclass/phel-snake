@@ -36,11 +36,18 @@
                    (println)(println)(println "playing...")))
     (php/usleep sleep-time)))
 
-(defn render-snake [snake]
-  (for [t :in (snake :tail)]
+(defn render-snake [s]
+  (for [t :in (s :tail)]
     (gui/render (t :x) (t :y) (snake-tail-icon :text) (snake-tail-icon :style)))
-  (let [head (snake :head)]
-    (gui/render (head :x) (head :y) (snake-head-icon :text) (snake-head-icon :style))))
+  (let [h (s :head)]
+    (gui/render (h :x) (h :y) (snake-head-icon :text) (snake-head-icon :style))))
+
+(defn clear-snake [s]
+  (when-not (nil? (s :tail))
+    (for [t :in (s :tail)]
+      (gui/render (t :x) (t :y) " "))
+    (let [h (s :head)]
+      (gui/render (h :x) (h :y) " "))))
 
 (defn render-goal [goal]
   (gui/render (goal :x) (goal :y) (goal-icon :text) (goal-icon :style)))
@@ -83,6 +90,7 @@
       (if (l/collision-with-board? b (s :new))
         (render-game-over b (s :new)))
 
+      (clear-snake (s :old))
       (render-snake s2)
       (render-goal g2)
       (render-stats b s2)
