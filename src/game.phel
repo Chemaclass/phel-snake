@@ -69,7 +69,7 @@
   (loop [b (l/board board-width board-height)
          s {:old {}
             :new (l/snake :right 1 (l/generate-snake-head b) [])}
-         goal (l/generate-new-goal b)]
+         g (l/generate-new-goal b)]
 
     (sleep-delay (s :new))
     (gui/clear-output)
@@ -77,7 +77,7 @@
 
     (let [{:hex in} (gui/read-input 3)
           next-direction (l/normalize-next-direction in)
-          g2 (l/update-goal (s :new) goal b)
+          g2 (l/update-goal (s :new) g b)
           s2 (l/move-snake (s :new) next-direction)]
 
       (if (l/collision-with-board? b (s :new))
@@ -88,10 +88,8 @@
       (render-stats b s2)
       (debug-snake b s2)
 
-      (let [new-goal? (not= goal g2)
-            s3 (if new-goal?
-                 (put s2 :speed (inc :speed))
-                 s2)
+      (let [new-goal? (not= g g2)
+            s3 (if new-goal? (update s2 :speed inc) s2)
             s4 (if new-goal? (l/grow-snake s3) s3)]
         (recur b {:old (s :new) :new s4} g2)))))
 
