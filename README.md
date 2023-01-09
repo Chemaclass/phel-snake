@@ -18,6 +18,12 @@ A cli-game written in [Phel](https://phel-lang.org/).
 3. Install the dependencies: `./tools/composer install`
 4. Run the game: `./tools/composer play`
 
+Alternatively, you can run the game using the `phel run` command, and define the width and height of the board, and optionally a debug flag.
+
+```bash
+vendor/bin/phel run src/game.phel width=40 height=15 debug
+```
+
 ## Demo
 
 ![](img/demo-snake.webp)
