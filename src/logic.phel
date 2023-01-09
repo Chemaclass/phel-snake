@@ -1,5 +1,10 @@
 (ns phel-snake\logic)
 
+(defn dd
+  "Dump and die."
+  [x]
+  (println x)(php/die))
+
 (def- key-left-arrow "1b5b44")
 (def- key-down-arrow "1b5b42")
 (def- key-right-arrow "1b5b43")
@@ -23,26 +28,32 @@
     # add head to the tail
     (update sn1 :tail |(push $ (snake :head)))))
 
-(defn move-snake [snake next-direction]
-  (if (nil? next-direction)
-    (recur snake (snake :direction))
-    (let [sn1 (case next-direction
-                :left (update-in snake [:head :x] dec)
-                :right (update-in snake [:head :x] inc)
-                :up (update-in snake [:head :y] dec)
-                :down (update-in snake [:head :y] inc))
-          # remove the last tail position
-          sn2 (update sn1 :tail |(slice $ 1))
-          # add head to the tail
-          sn3 (update sn2 :tail |(push $ (snake :head)))]
-      (merge sn3 {:direction next-direction}))))
+(defstruct board [offset-width offset-height width height])
+(defstruct snake [direction speed head tail])
 
-(defn collision-with-board? [board snake]
+(defn dd
+  "Dump and die."
+  [x]
+  (println x)(php/die))
+
+(defn move-snake [s next-direction]
+  (if (nil? next-direction)
+    (recur s (s :direction))
+    (let [s2 (case next-direction
+               :left (update-in s [:head :x] dec)
+               :right (update-in s [:head :x] inc)
+               :up (update-in s [:head :y] dec)
+               :down (update-in s [:head :y] inc))
+          new-tail (push (drop 1 (s2 :tail)) (s :head))
+          s3 (put s2 :tail new-tail)]
+      (put s3 :direction next-direction))))
+
+(defn collision-with-board? [b s]
   (or
-   (>= 1 (get-in snake [:head :x]))
-   (>= 0 (get-in snake [:head :y]))
-   (= (board :width) (get-in snake [:head :x]))
-   (= (dec (board :height)) (get-in snake [:head :y]))))
+   (>= 1 (get-in s [:head :x]))
+   (>= 0 (get-in s [:head :y]))
+   (= (b :width) (get-in s [:head :x]))
+   (= (dec (b :height)) (get-in s [:head :y]))))
 
 (defn generate-new-goal [{:width width :height height}]
   (let [pos {:x (dec (rand-int width))
@@ -62,13 +73,13 @@
    (= (get-in snake [:head :x]) (goal :x))
    (= (get-in snake [:head :y]) (goal :y))))
 
-(defn update-goal [snake goal board]
-  (if (snake-reach-goal? snake goal)
-    (generate-new-goal board)
-    goal))
+(defn update-goal [s g b]
+  (if (snake-reach-goal? s g)
+    (generate-new-goal b)
+    g))
 
 (defn get-from-list [xs key default & [split]]
   (let [arg (find |(php/str_contains $ key) xs)]
     (if (empty? arg)
-        default
-        (php/intval (get (php/explode (or split "=") arg) 1)))))
+      default
+      (php/intval (get (php/explode (or split "=") arg) 1)))))

@@ -1,34 +1,40 @@
 (ns phel-snake-tests\logic-test
-  (:require phel-snake\logic :refer [snake-reach-goal?
+  (:require phel-snake\logic :refer [snake
+                                     snake-reach-goal?
+                                     grow-snake
                                      move-snake
                                      collision-with-board?
                                      get-from-list])
   (:require phel\test :refer [deftest is]))
 
 (deftest test-move-snake
-  (let [snake {:head {:x 5 :y 5}
-               :direction :right
-               :tail [{:x 3 :y 5} {:x 4 :y 5}]}]
-    (is (= {:head {:x 6 :y 5}
-            :direction :right
-            :tail [{:x 4 :y 5} {:x 5 :y 5}]}
-           (move-snake snake nil)) "Keep the old direction if nil")
-    (is (= {:head {:x 4 :y 5}
-            :direction :left
-            :tail [{:x 4 :y 5} {:x 5 :y 5}]}
-           (move-snake snake :left)))
-    (is (= {:head {:x 6 :y 5}
-            :direction :right
-            :tail [{:x 4 :y 5} {:x 5 :y 5}]}
-           (move-snake snake :right)))
-    (is (= {:head {:x 5 :y 4}
-            :direction :up
-            :tail [{:x 4 :y 5} {:x 5 :y 5}]}
-           (move-snake snake :up)))
-    (is (= {:head {:x 5 :y 6}
-            :direction :down
-            :tail [{:x 4 :y 5} {:x 5 :y 5}]}
-           (move-snake snake :down)))))
+  (let  [s (snake :right 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])]
+    (is (= (snake :right 1 {:x 6 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
+           (move-snake s nil)) "Keep the old direction if nil")
+    (is (= (snake :left 1 {:x 4 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
+           (move-snake s :left)))
+    (is (= (snake :right 1 {:x 6 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
+           (move-snake s :right)))
+    (is (= (snake :up 1 {:x 5 :y 4} [{:x 4 :y 5} {:x 5 :y 5}])
+           (move-snake s :up)))
+    (is (= (snake :down 1 {:x 5 :y 6} [{:x 4 :y 5} {:x 5 :y 5}])
+           (move-snake s :down)))))
+
+(deftest test-grow-snake-right
+  (is (= (snake :right 1 {:x 6 :y 5} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
+         (grow-snake (snake :right 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
+
+(deftest test-grow-snake-left
+  (is (= (snake :left 1 {:x 4 :y 5} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
+         (grow-snake (snake :left 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
+
+(deftest test-grow-snake-up
+  (is (= (snake :up 1 {:x 5 :y 4} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
+         (grow-snake (snake :up 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
+
+(deftest test-grow-snake-down
+  (is (= (snake :down 1 {:x 5 :y 6} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
+         (grow-snake (snake :down 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
 
 (deftest test-snake-reach-goal?
   (let [goal {:x 2 :y 2}]

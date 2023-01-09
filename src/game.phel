@@ -13,6 +13,9 @@
 
 (def board-width (l/get-from-list argv "width" 42))
 (def board-height (l/get-from-list argv "height" 22))
+(def board-offset-width "TODO: Not implemented yet" (l/get-from-list argv "x" 0))
+(def board-offset-height "TODO: Not implemented yet" (l/get-from-list argv "y" 0))
+
 (def debug? (php/in_array "debug" argv))
 (def nano-seconds-delay-base 140000)
 (def start-time (php/microtime true))
@@ -22,7 +25,8 @@
 
 (defn debug-snake [board snake]
   (if debug? (do (gui/clear-line (+ 3 (board :height)))
-                 (gui/render 0 (+ 3 (board :height)) (str "# snake" snake)))))
+                 (let [text (str "$ " board "\n$ " snake)]
+                   (println text)))))
 
 (defn sleep-delay [snake]
   (let [velocity (* (snake :speed) difficulty)
@@ -31,7 +35,7 @@
                               :left 2 :right 2
                               :up 1 :down 1)
         sleep-time (/ nano-sec velocity-normalizer)]
-    (if debug? (do (println)
+    (if debug? (do (println)(println)(println)
                    (println "# sleep-time:" sleep-time "| velocity-normalizer:" velocity-normalizer)
                    (println)(println)(println "playing...")))
     (php/usleep sleep-time)))
@@ -39,8 +43,15 @@
 (defn render-snake [snake]
   (for [t :in (snake :tail)]
     (gui/render (t :x) (t :y) (snake-tail-icon :text) (snake-tail-icon :style)))
-  (let [head (snake :head)]
-    (gui/render (head :x) (head :y) (snake-head-icon :text) (snake-head-icon :style))))
+  (let [h (snake :head)]
+    (gui/render (h :x) (h :y) (snake-head-icon :text) (snake-head-icon :style))))
+
+(defn clear-snake [snake]
+  (when-not (nil? (snake :tail))
+    (for [t :in (snake :tail)]
+      (gui/render (t :x) (t :y) " "))
+    (let [h (snake :head)]
+      (gui/render (h :x) (h :y) " "))))
 
 (defn render-goal [goal]
   (gui/render (goal :x) (goal :y) (goal-icon :text) (goal-icon :style)))
@@ -54,6 +65,7 @@
     (debug-snake board snake)
     (gui/render x-center y-center game-over-text)
     (gui/render x-center (inc y-center) (format "Points: %d" (snake :speed)))
+    (if debug? (gui/clear-line (+ 3 (board :height))))
     (throw (php/new RuntimeException "\n\nSo much fun!"))))
 
 (defn playing-time []
@@ -64,38 +76,37 @@
   (println (format "Speed: %d" (count (snake :tail))))
   (println (playing-time)))
 
+(def board (l/board board-offset-width board-offset-height board-width board-height))
+
 (defn main []
   (gui/clear-screen)
-  (loop [board {:width board-width :height board-height}
-         snake {:direction :right
-                :speed 1
-                :head (l/generate-snake-head board)
-                :tail []}
+  (gui/render-board board)
+
+  (loop [snake {:old {}
+                :current (l/snake :right 1 (l/generate-snake-head board) [])}
          goal (l/generate-new-goal board)]
 
-    (sleep-delay snake)
+    (sleep-delay (snake :current))
     (gui/clear-output)
-    (gui/render-board board)
 
     (let [{:hex in} (gui/read-input 3)
           next-direction (l/normalize-next-direction in)
-          updated-goal (l/update-goal snake goal board)
-          updated-snake (l/move-snake snake next-direction)]
+          goal2 (l/update-goal (snake :current) goal board)
+          snake2 (l/move-snake (snake :current) next-direction)]
 
-      (if (l/collision-with-board? board snake)
-        (render-game-over board snake))
+      (if (l/collision-with-board? board (snake :current))
+        (render-game-over board (snake :current)))
 
-      (render-snake updated-snake)
-      (render-goal updated-goal)
-      (render-stats board updated-snake)
-      (debug-snake board updated-snake)
+      (clear-snake (snake :old))
+      (render-snake snake2)
+      (render-goal goal2)
+      (render-stats board snake2)
+      (debug-snake board snake2)
 
-      (let [new-goal? (not= goal updated-goal)
-            sn (if new-goal?
-                 (update updated-snake :speed inc)
-                 updated-snake)
-            sn2 (if new-goal? (l/grow-snake sn) sn)]
-        (recur board sn2 updated-goal)))))
+      (let [new-goal? (not= goal goal2)
+            snake3 (if new-goal? (update snake2 :speed inc) snake2)
+            snake4 (if new-goal? (l/grow-snake snake3) snake3)]
+        (recur {:old (snake :current) :current snake4} goal2)))))
 
 (when-not *compile-mode*
   (try
