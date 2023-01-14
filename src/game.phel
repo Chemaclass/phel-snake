@@ -78,6 +78,14 @@
 
 (def board (l/board board-offset-width board-offset-height board-width board-height))
 
+(defn render-game
+  [old-snake new-snake goal]
+  (clear-snake old-snake)
+  (render-snake new-snake)
+  (render-goal goal)
+  (render-stats board new-snake)
+  (debug-snake board new-snake))
+
 (defn main []
   (gui/clear-screen)
   (gui/render-board board)
@@ -97,11 +105,7 @@
       (if (l/collision-with-board? board (snake :current))
         (render-game-over board (snake :current)))
 
-      (clear-snake (snake :old))
-      (render-snake snake2)
-      (render-goal goal2)
-      (render-stats board snake2)
-      (debug-snake board snake2)
+      (render-game (snake :old) snake2 goal2)
 
       (let [new-goal? (not= goal goal2)
             snake3 (if new-goal? (update snake2 :speed inc) snake2)
