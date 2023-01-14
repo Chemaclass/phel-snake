@@ -16,18 +16,18 @@
 (def board-offset-width "TODO: Not implemented yet" (l/get-from-list argv "x" 0))
 (def board-offset-height "TODO: Not implemented yet" (l/get-from-list argv "y" 0))
 
-(def debug? (php/in_array "debug" argv))
 (def nano-seconds-delay-base 140000)
 (def start-time (php/microtime true))
 (def goal-icon {:text " " :style "goal"})
 (def snake-head-icon {:text " " :style "snake-head"})
 (def snake-tail-icon {:text " " :style "snake-tail"})
-(def accelerate? (var false))
+
+(def debug? (php/in_array "debug" argv))
+(def good-mode? (php/in_array "good-mode" argv))
+(def accelerate-counter "A counter to accelerate the sleeping render" (var 0))
 
 (defn debug-snake [board snake]
-  (if debug? (do (gui/clear-line (+ 3 (board :height)))
-                 (let [text (str "$ " board "\n$ " snake)]
-                   (println text)))))
+  (if debug? (println (str "$ " board "\n$ " snake))))
 
 (defn normalize-velocity [snake]
   (case (snake :direction)
@@ -35,16 +35,15 @@
     :up 1 :down 1))
 
 (defn sleep-delay [snake]
-  (let [velocity (* (snake :speed) difficulty)
-        nano-sec (- nano-seconds-delay-base velocity)
-        sleep-time (/ nano-sec (normalize-velocity snake))]
-    (if debug? (do (println)(println)(println)
-                   (println "# sleep-time:" sleep-time)
-                   (println "Use <space-key> to accelerate 1 sec the snake")
-                   (println)(println)(println "playing...")))
-    (if (deref accelerate?)
-      (php/usleep 1)
-      (php/usleep sleep-time))))
+  (if (> (deref accelerate-counter) 0)
+    (do (php/usleep 0) (set! accelerate-counter (dec (deref accelerate-counter))))
+    (if good-mode?
+      (php/usleep 140000)
+      (let [velocity (* (snake :speed) difficulty)
+            nano-sec (- nano-seconds-delay-base velocity)
+            sleep-time (/ nano-sec (normalize-velocity snake))]
+        (if debug? (println "# sleep-time:" sleep-time))
+        (php/usleep sleep-time)))))
 
 (defn render-snake [snake]
   (for [t :in (snake :tail)]
@@ -72,7 +71,7 @@
     (gui/render x-center y-center game-over-text)
     (gui/render x-center (inc y-center) (format "Points: %d" (snake :speed)))
     (if debug? (gui/clear-line (+ 3 (board :height))))
-    (throw (php/new RuntimeException "\n\nSo much fun!"))))
+    (throw (php/new RuntimeException))))
 
 (defn playing-time []
   (let [diff-time (- (php/microtime true) start-time)]
@@ -84,21 +83,27 @@
 
 (def board (l/board board-offset-width board-offset-height board-width board-height))
 
-(defn render-game
-  [old-snake new-snake goal]
+(defn render-game [old-snake new-snake goal]
+  (debug-snake board new-snake)
   (clear-snake old-snake)
   (render-snake new-snake)
   (render-goal goal)
-  (render-stats board new-snake)
-  (debug-snake board new-snake))
+  (render-stats board new-snake))
 
 (defn main []
   (gui/clear-screen)
   (gui/render-board board)
+  (println)
+  (println)
+  (println)
 
   (loop [snake {:old {}
                 :current (l/snake :right 1 (l/generate-snake-head board) [])}
          goal (l/generate-new-goal board)]
+
+  (println "playing...")
+  (println "# good-mode?" good-mode?)
+  (println "# Use <space-key> to accelerate-counter 1 sec the snake")
 
     (sleep-delay (snake :current))
     (gui/clear-output)
@@ -109,8 +114,7 @@
           snake2 (l/move-snake (snake :current) next-direction)]
 
       (if (= in l/key-space)
-        (set! accelerate? true)
-        (set! accelerate? false))
+        (set! accelerate-counter 3))
 
       (if (l/collision-with-board? board (snake :current))
         (render-game-over board (snake :current)))
