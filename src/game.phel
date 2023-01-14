@@ -22,23 +22,29 @@
 (def goal-icon {:text " " :style "goal"})
 (def snake-head-icon {:text " " :style "snake-head"})
 (def snake-tail-icon {:text " " :style "snake-tail"})
+(def accelerate? (var false))
 
 (defn debug-snake [board snake]
   (if debug? (do (gui/clear-line (+ 3 (board :height)))
                  (let [text (str "$ " board "\n$ " snake)]
                    (println text)))))
 
+(defn normalize-velocity [snake]
+  (case (snake :direction)
+    :left 2 :right 2
+    :up 1 :down 1))
+
 (defn sleep-delay [snake]
   (let [velocity (* (snake :speed) difficulty)
         nano-sec (- nano-seconds-delay-base velocity)
-        velocity-normalizer (case (snake :direction)
-                              :left 2 :right 2
-                              :up 1 :down 1)
-        sleep-time (/ nano-sec velocity-normalizer)]
+        sleep-time (/ nano-sec (normalize-velocity snake))]
     (if debug? (do (println)(println)(println)
-                   (println "# sleep-time:" sleep-time "| velocity-normalizer:" velocity-normalizer)
+                   (println "# sleep-time:" sleep-time)
+                   (println "Use <space-key> to accelerate 1 sec the snake")
                    (println)(println)(println "playing...")))
-    (php/usleep sleep-time)))
+    (if (deref accelerate?)
+      (php/usleep 1)
+      (php/usleep sleep-time))))
 
 (defn render-snake [snake]
   (for [t :in (snake :tail)]
@@ -101,6 +107,10 @@
           next-direction (l/normalize-next-direction in)
           goal2 (l/update-goal (snake :current) goal board)
           snake2 (l/move-snake (snake :current) next-direction)]
+
+      (if (= in l/key-space)
+        (set! accelerate? true)
+        (set! accelerate? false))
 
       (if (l/collision-with-board? board (snake :current))
         (render-game-over board (snake :current)))

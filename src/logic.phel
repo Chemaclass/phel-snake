@@ -5,6 +5,8 @@
   [x]
   (println x)(php/die))
 
+# Hexadecimal keys
+(def key-space "20")
 (def- key-left-arrow "1b5b44")
 (def- key-down-arrow "1b5b42")
 (def- key-right-arrow "1b5b43")
@@ -30,11 +32,6 @@
 
 (defstruct board [offset-width offset-height width height])
 (defstruct snake [direction speed head tail])
-
-(defn dd
-  "Dump and die."
-  [x]
-  (println x)(php/die))
 
 (defn move-snake [s next-direction]
   (if (nil? next-direction)

@@ -3,5 +3,6 @@ src/PhelGenerated/
 vendor/
 out/
 
+src/local.phel
 *.cache
 .phel-repl-history
