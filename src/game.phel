@@ -23,7 +23,7 @@
 (def snake-tail-icon {:text " " :style "snake-tail"})
 
 (def debug? (php/in_array "debug" argv))
-(def good-mode? (php/in_array "good-mode" argv))
+(def god-mode? (php/in_array "god-mode" argv))
 (def accelerate-counter "A counter to accelerate the sleeping render" (var 0))
 
 (defn normalize-velocity [snake]
@@ -34,7 +34,7 @@
 (defn sleep-delay [snake]
   (if (> (deref accelerate-counter) 0)
     (do (php/usleep 0) (set! accelerate-counter (dec (deref accelerate-counter))))
-    (if good-mode?
+    (if god-mode?
       (php/usleep 140000)
       (let [velocity (* (snake :speed) difficulty)
             nano-sec (- nano-seconds-delay-base velocity)
@@ -95,7 +95,7 @@
          goal (l/generate-new-goal board)]
 
     (println "playing...")
-    (println "# good-mode?" good-mode?)
+    (println "# god-mode?" god-mode?)
     (println "# Use <space-key> to accelerate-counter 1 sec the snake")
 
     (sleep-delay (snake :current))
