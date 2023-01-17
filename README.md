@@ -9,7 +9,7 @@ A cli-game written in [Phel](https://phel-lang.org/).
 Use the arrow keys to move the snake: `left-right-top-down`.
 You can use the `space-key` to accelerate a few cells the snake in the current direction.
 
-The snake will automatically increase the speed after each goal reached, unless you enable the "good mode" (using the argument `god-mode`).
+The snake will automatically increase the speed after each goal reached, unless you enable the "god mode" (using the argument `god-mode`).
 
 The game ends when the snake touches any border of the board.
 
