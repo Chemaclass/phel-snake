@@ -58,7 +58,7 @@
 (defn render-goal [goal]
   (gui/render (goal :x) (goal :y) (goal-icon :text) (goal-icon :style)))
 
-(defn render-game-over [board snake]
+(defn game-over [board snake]
   (let [game-over-text "GAME OVER"
         game-over-text-len (php/strlen game-over-text)
         x-center (php/round (- (/ (board :width) 2) (/ game-over-text-len 2)))
@@ -67,7 +67,7 @@
     (gui/render x-center y-center game-over-text)
     (gui/render x-center (inc y-center) (format "Points: %d" (snake :speed)))
     (if debug? (gui/clear-line (+ 3 (board :height))))
-    (throw (php/new RuntimeException))))
+    (php/exit)))
 
 (defn render-stats [board snake]
   (println (format "Speed: %d" (count (snake :tail))))
@@ -110,7 +110,7 @@
         (set! accelerate-counter 3))
 
       (if (l/collision-with-board? board (snake :current))
-        (render-game-over board (snake :current)))
+        (game-over board (snake :current)))
 
       (render-game (snake :old) snake2 goal2)
 

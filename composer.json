@@ -17,6 +17,7 @@
         "roave/security-advisories": "dev-latest",
         "symfony/var-dumper": "5.4.x-dev"
     },
+    "minimum-stability": "dev",
     "scripts": {
         "start": [
             "@compile",
@@ -31,7 +32,6 @@
             "PhelGenerated\\": "src/PhelGenerated"
         }
     },
-    "minimum-stability": "dev",
     "config": {
         "preferred-install": "dist",
         "platform": {
