@@ -25,7 +25,8 @@
         ],
         "compile": "vendor/bin/phel compile --no-cache",
         "play": "php play.php",
-        "test": "vendor/bin/phel test"
+        "test": "vendor/bin/phel test",
+        "format": "vendor/bin/phel format src tests"
     },
     "autoload": {
         "psr-4": {

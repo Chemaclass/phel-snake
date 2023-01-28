@@ -1,0 +1,12 @@
+(ns phel-snake\util)
+
+(defn dd
+  "Dump and die."
+  [x]
+  (println x)(php/die))
+
+(defn get-from-list [xs key default & [split]]
+  (let [arg (find |(php/str_contains $ key) xs)]
+    (if (empty? arg)
+      default
+      (php/intval (get (php/explode (or split "=") arg) 1)))))

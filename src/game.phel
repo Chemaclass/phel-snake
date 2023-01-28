@@ -1,7 +1,8 @@
 (ns phel-snake\game
   (:use RuntimeException)
   (:require phel-cli-gui\terminal-gui :as gui)
-  (:require phel-snake\logic :as l))
+  (:require phel-snake\logic :as l)
+  (:require phel-snake\util :refer [get-from-list]))
 
 (gui/add-output-formatter {:style-name "snake-head" :foreground "black" :background "red" :options ["bold"]})
 (gui/add-output-formatter {:style-name "snake-tail" :foreground "black" :background "green" :options ["bold"]})
@@ -11,10 +12,10 @@
   "The higher the faster it will increase the speed on each level."
   10000)
 
-(def board-width (l/get-from-list argv "width" 42))
-(def board-height (l/get-from-list argv "height" 22))
-(def board-offset-width "TODO: Not implemented yet" (l/get-from-list argv "x" 0))
-(def board-offset-height "TODO: Not implemented yet" (l/get-from-list argv "y" 0))
+(def board-width (get-from-list argv "width" 42))
+(def board-height (get-from-list argv "height" 22))
+(def board-offset-width "TODO: Not implemented yet" (get-from-list argv "x" 0))
+(def board-offset-height "TODO: Not implemented yet" (get-from-list argv "y" 0))
 
 (def nano-seconds-delay-base 140000)
 (def start-time (php/microtime true))

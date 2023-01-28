@@ -1,0 +1,8 @@
+(ns phel-snake-tests\util-test
+  (:require phel-snake\util :refer [get-from-list])
+  (:require phel\test :refer [deftest is]))
+
+(deftest test-get-from-list
+  (is (= 10 (get-from-list [] "key" 10)) "empty args results in default value")
+  (is (= 10 (get-from-list ["unknown=2"] "key" 10)) "unknown key results in default value")
+  (is (= 5 (get-from-list ["unknown=2" "key=5"] "key" 10)) "defined key results in defined value"))
