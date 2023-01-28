@@ -1,5 +1,9 @@
 (ns phel-snake\logic)
 
+(defstruct board [width height])
+(defstruct board-style [horizontal vertical corner])
+(defstruct snake [direction speed head tail])
+
 # Hexadecimal keys
 (def key-space "20")
 (def- key-left-arrow "1b5b44")
@@ -7,14 +11,11 @@
 (def- key-right-arrow "1b5b43")
 (def- key-up-arrow "1b5b41")
 
-(def- directions
+(def directions
   {key-left-arrow :left
    key-down-arrow :down
    key-right-arrow :right
    key-up-arrow :up})
-
-(defn normalize-next-direction [in]
-  (directions in))
 
 (defn grow-snake [snake]
   (let [sn1 (case (snake :direction)
@@ -24,9 +25,6 @@
               :down (update-in snake [:head :y] inc))]
     # add head to the tail
     (update sn1 :tail |(push $ (snake :head)))))
-
-(defstruct board [offset-width offset-height width height])
-(defstruct snake [direction speed head tail])
 
 (defn move-snake [s next-direction]
   (if (nil? next-direction)

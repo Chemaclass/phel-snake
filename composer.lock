@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Chemaclass/phel-cli-gui.git",
-                "reference": "a8adb7db93a5e96a7b5458a7beac675aa361968f"
+                "reference": "1646b0a2ae8cd63e42740ded410dc3723d6e5bae"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Chemaclass/phel-cli-gui/zipball/a8adb7db93a5e96a7b5458a7beac675aa361968f",
-                "reference": "a8adb7db93a5e96a7b5458a7beac675aa361968f",
+                "url": "https://api.github.com/repos/Chemaclass/phel-cli-gui/zipball/1646b0a2ae8cd63e42740ded410dc3723d6e5bae",
+                "reference": "1646b0a2ae8cd63e42740ded410dc3723d6e5bae",
                 "shasum": ""
             },
             "require": {
@@ -52,7 +52,7 @@
                 "issues": "https://github.com/Chemaclass/phel-cli-gui/issues",
                 "source": "https://github.com/Chemaclass/phel-cli-gui/tree/master"
             },
-            "time": "2023-01-27T21:40:38+00:00"
+            "time": "2023-01-28T09:57:00+00:00"
         },
         {
             "name": "gacela-project/gacela",

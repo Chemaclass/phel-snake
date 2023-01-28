@@ -28,11 +28,6 @@
         "test": "vendor/bin/phel test",
         "format": "vendor/bin/phel format src tests"
     },
-    "autoload": {
-        "psr-4": {
-            "PhelGenerated\\": "src/PhelGenerated"
-        }
-    },
     "config": {
         "preferred-install": "dist",
         "platform": {

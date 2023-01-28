@@ -8,15 +8,11 @@
 (gui/add-output-formatter {:style-name "snake-tail" :foreground "black" :background "green" :options ["bold"]})
 (gui/add-output-formatter {:style-name "goal" :foreground "black" :background "magenta" :options ["bold"]})
 
-(def difficulty
-  "The higher the faster it will increase the speed on each level."
-  10000)
-
 (def board-width (get-from-list argv "width" 42))
 (def board-height (get-from-list argv "height" 22))
-(def board-offset-width "TODO: Not implemented yet" (get-from-list argv "x" 0))
-(def board-offset-height "TODO: Not implemented yet" (get-from-list argv "y" 0))
+(def board (l/board board-width board-height))
 
+(def difficulty "The higher the faster the speed will increase on each level." 10000)
 (def nano-seconds-delay-base 140000)
 (def start-time (php/microtime true))
 (def goal-icon {:text " " :style "goal"})
@@ -75,8 +71,6 @@
   (let [diff-time (- (php/microtime true) start-time)]
     (println (format "Time: %d secs" (php/round diff-time)))))
 
-(def board (l/board board-offset-width board-offset-height board-width board-height))
-
 (defn render-game [old-snake new-snake goal]
   (clear-snake old-snake)
   (render-snake new-snake)
@@ -86,7 +80,7 @@
 
 (defn main []
   (gui/clear-screen)
-  (gui/render-board board)
+  (gui/render-board board {:horizontal "---" :vertical "|" :corner "+"})
   (println)
   (println)
   (println)
@@ -103,8 +97,8 @@
     (gui/clear-output)
 
     (let [{:hex in} (gui/read-input 3)
-          next-direction (l/normalize-next-direction in)
-          goal2 (l/update-goal (snake :current) goal board)
+          next-direction (l/directions in)
+          updated-goal (l/update-goal (snake :current) goal board)
           snake2 (l/move-snake (snake :current) next-direction)]
 
       (if (= in l/key-space)
@@ -113,12 +107,12 @@
       (if (l/collision-with-board? board (snake :current))
         (game-over board (snake :current)))
 
-      (render-game (snake :old) snake2 goal2)
+      (render-game (snake :old) snake2 updated-goal)
 
-      (let [new-goal? (not= goal goal2)
+      (let [new-goal? (not= goal updated-goal)
             snake3 (if new-goal? (update snake2 :speed inc) snake2)
-            snake4 (if new-goal? (l/grow-snake snake3) snake3)]
-        (recur {:old (snake :current) :current snake4} goal2)))))
+            updated-snake (if new-goal? (l/grow-snake snake3) snake3)]
+        (recur {:old (snake :current) :current updated-snake} updated-goal)))))
 
 (when-not *compile-mode*
   (try
