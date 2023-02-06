@@ -20,10 +20,10 @@
     "minimum-stability": "dev",
     "scripts": {
         "start": [
-            "@compile",
+            "@build",
             "@play"
         ],
-        "compile": "vendor/bin/phel compile --no-cache",
+        "build": "vendor/bin/phel build --no-cache",
         "play": "php play.php",
         "test": "vendor/bin/phel test",
         "format": "vendor/bin/phel format src tests"
