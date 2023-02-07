@@ -1,10 +1,23 @@
 (ns phel-snake-tests\logic-test
   (:require phel-snake\logic :refer [snake
                                      snake-reach-goal?
-                                     grow-snake
                                      move-snake
-                                     collision-with-board?])
+                                     collision-with-board?
+                                     grow-snake])
   (:require phel\test :refer [deftest is]))
+
+(deftest test-snake-reach-goal?
+  (let [goal {:x 2 :y 2}]
+    (is (false? (snake-reach-goal? {:head {:x 1 :y 1}} goal)))
+    (is (true? (snake-reach-goal? {:head {:x 2 :y 2}} goal)))))
+
+(deftest test-collision-with-board?
+  (let [board {:width 10 :height 10}]
+    (is (false? (collision-with-board? board  {:head {:x 5 :y 5}})))
+    (is (true?  (collision-with-board? board {:head {:x 5 :y 0}})) "collision on top")
+    (is (true?  (collision-with-board? board {:head {:x 5 :y 9}})) "collision on right")
+    (is (true?  (collision-with-board? board {:head {:x 10 :y 5}})) "collision on bottom")
+    (is (true?  (collision-with-board? board {:head {:x 0 :y 5}})) "collision on left")))
 
 (deftest test-move-snake
   (let  [s (snake :right 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])]
@@ -34,16 +47,3 @@
 (deftest test-grow-snake-down
   (is (= (snake :down 1 {:x 5 :y 6} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
          (grow-snake (snake :down 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
-
-(deftest test-snake-reach-goal?
-  (let [goal {:x 2 :y 2}]
-    (is (false? (snake-reach-goal? {:head {:x 1 :y 1}} goal)))
-    (is (true? (snake-reach-goal? {:head {:x 2 :y 2}} goal)))))
-
-(deftest test-collision-with-board?
-  (let [board {:width 10 :height 10}]
-    (is (false? (collision-with-board? board  {:head {:x 5 :y 5}})))
-    (is (true?  (collision-with-board? board {:head {:x 5 :y 0}})) "collision on top")
-    (is (true?  (collision-with-board? board {:head {:x 5 :y 9}})) "collision on right")
-    (is (true?  (collision-with-board? board {:head {:x 10 :y 5}})) "collision on bottom")
-    (is (true?  (collision-with-board? board {:head {:x 0 :y 5}})) "collision on left")))
