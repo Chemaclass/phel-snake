@@ -1,4 +1,12 @@
-(ns phel-snake\simplified\simple-snake
+#########################################################################################
+# This is a full version of the snake-cli-game, with the following elements:
+# - A board
+# - A snake with constant speed inside the board
+# - The game ends when the snake touches the board
+#########################################################################################
+# Try it out: vendor/bin/phel run src/simple-version/game.phel
+#########################################################################################
+(ns phel-snake\simple-version\game
   (:require phel-cli-gui\terminal-gui :as gui))
 
 (gui/add-output-formatter {:style-name "snake-head" :foreground "black" :background "red" :options ["bold"]})
@@ -51,6 +59,7 @@
   (gui/render-board board {:horizontal "-" :vertical "|" :corner "+"}))
 
 (def initial-snake (snake-struct :right 1 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}]))
+
 (defn main []
   (loop [snake initial-snake]
     (render-board)
@@ -67,3 +76,5 @@
       (php/usleep 50000)
       (recur new-snake))))
 
+(when-not *compile-mode*
+  (main))

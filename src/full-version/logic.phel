@@ -1,4 +1,4 @@
-(ns phel-snake\logic)
+(ns phel-snake\full-version\logic)
 
 (defstruct board [width height])
 (defstruct board-style [horizontal vertical corner])

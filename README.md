@@ -39,7 +39,7 @@ You can define some optional arguments
 - debug -> you can see internal stats of the game
 
 ```bash
-vendor/bin/phel run src/game.phel width=40 height=15 god-mode debug
+vendor/bin/phel run src/main.phel width=40 height=15 god-mode debug
 ```
 
 ## Demo

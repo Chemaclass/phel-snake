@@ -7,3 +7,4 @@ out/
 src/local.phel
 *.cache
 .phel-repl-history
+phel-config-local.php

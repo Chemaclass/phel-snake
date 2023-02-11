@@ -1,5 +1,5 @@
-(ns phel-snake-tests\logic-test
-  (:require phel-snake\logic :refer [snake
+(ns phel-snake-tests\full-version\logic-test
+  (:require phel-snake\full-version\logic :refer [snake
                                      snake-reach-goal?
                                      move-snake
                                      collision-with-board?

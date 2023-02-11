@@ -1,0 +1,5 @@
+(ns phel-snake\main
+  (:require phel-snake\full-version\game :refer [main]))
+
+(when-not *compile-mode*
+  (main))
