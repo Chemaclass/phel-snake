@@ -1,0 +1,69 @@
+(ns phel-snake\simplified\simple-snake
+  (:require phel-cli-gui\terminal-gui :as gui))
+
+(gui/add-output-formatter {:style-name "snake-head" :foreground "black" :background "red" :options ["bold"]})
+(gui/add-output-formatter {:style-name "snake-tail" :foreground "black" :background "green" :options ["bold"]})
+
+(defstruct board-struct [width height])
+(defstruct snake-struct [direction speed head tail])
+
+(def board (board-struct 40 20))
+
+# Hexadecimal keys
+(def directions
+  {"1b5b44" :left
+   "1b5b42" :down
+   "1b5b43" :right
+   "1b5b41" :up})
+
+(defn move-snake [s next-direction]
+  (if (nil? next-direction)
+    (recur s (s :direction))
+    (let [s2 (case next-direction
+               :left (update-in s [:head :x] dec)
+               :right (update-in s [:head :x] inc)
+               :up (update-in s [:head :y] dec)
+               :down (update-in s [:head :y] inc))
+          new-tail (push (drop 1 (s2 :tail)) (s :head))
+          s3 (put s2 :tail new-tail)]
+      (put s3 :direction next-direction))))
+
+(defn collision-with-board? [snake]
+  (or
+   (>= 1 (get-in snake [:head :x]))
+   (>= 0 (get-in snake [:head :y]))
+   (= (board :width) (get-in snake [:head :x]))
+   (= (dec (board :height)) (get-in snake [:head :y]))))
+
+(defn render-snake [snake]
+  (for [t :in (snake :tail)]
+    (gui/render (t :x) (t :y) " " "snake-tail"))
+  (let [h (snake :head)]
+    (gui/render (h :x) (h :y) " " "snake-head")))
+
+(defn game-over [snake]
+  (render-snake snake)
+  (println "GAME OVER")
+  (php/exit))
+
+(defn render-board []
+  (gui/clear-screen)
+  (gui/render-board board {:horizontal "-" :vertical "|" :corner "+"}))
+
+(def initial-snake (snake-struct :right 1 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}]))
+(defn main []
+  (loop [snake initial-snake]
+    (render-board)
+    (println "Move your snake with the arrow-keys [UP, DOWN, LEFT, RIGHT]")
+
+    (if (collision-with-board? snake)
+      (game-over snake))
+
+    (let [{:hex in} (gui/read-input 3)
+          next-direction (directions in)
+          new-snake (move-snake snake next-direction)]
+
+      (render-snake new-snake)
+      (php/usleep 50000)
+      (recur new-snake))))
+

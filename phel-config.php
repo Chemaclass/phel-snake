@@ -8,4 +8,5 @@ return [
     'vendor-dir' => 'vendor',
     'out' => 'out',
     'ignore-when-building' => ['local.phel'],
+    'keep-generated-temp-files' => true,
 ];
