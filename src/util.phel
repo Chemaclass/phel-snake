@@ -1,4 +1,4 @@
-(ns phel-snake\full-version\util)
+(ns phel-snake\util)
 
 (defn dd
   "Dump and die."

@@ -1,4 +1,4 @@
-(ns phel-snake-tests\full-version\util-test
+(ns phel-snake-tests\util-test
   (:require phel-snake\full-version\util :refer [get-from-list])
   (:require phel\test :refer [deftest is]))
 

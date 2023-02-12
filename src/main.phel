@@ -1,5 +1,9 @@
 (ns phel-snake\main
-  (:require phel-snake\full-version\game :refer [main]))
+  (:require phel-snake\full-version\game :refer [full-game])
+  (:require phel-snake\simple-version\game :refer [simple-game])
+  (:require phel-snake\util :refer [get-from-list]))
 
 (when-not *compile-mode*
-  (main))
+  (if (get-from-list argv "simple" false)
+    (simple-game)
+    (full-game)))

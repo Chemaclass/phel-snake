@@ -60,7 +60,7 @@
 
 (def initial-snake (snake-struct :right 1 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}]))
 
-(defn main []
+(defn simple-game []
   (loop [snake initial-snake]
     (render-board)
     (println "Move your snake with the arrow-keys [UP, DOWN, LEFT, RIGHT]")
@@ -75,6 +75,3 @@
       (render-snake new-snake)
       (php/usleep 50000)
       (recur new-snake))))
-
-(when-not *compile-mode*
-  (main))

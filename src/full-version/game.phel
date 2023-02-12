@@ -13,7 +13,7 @@
   (:use RuntimeException)
   (:require phel-cli-gui\terminal-gui :as gui)
   (:require phel-snake\full-version\logic :as l)
-  (:require phel-snake\full-version\util :refer [get-from-list]))
+  (:require phel-snake\util :refer [get-from-list]))
 
 (gui/add-output-formatter {:style-name "snake-head" :foreground "black" :background "red" :options ["bold"]})
 (gui/add-output-formatter {:style-name "snake-tail" :foreground "black" :background "green" :options ["bold"]})
@@ -89,7 +89,7 @@
   (render-stats board new-snake)
   (if debug? (println (str "$ " board "\n$ " new-snake))))
 
-(defn main []
+(defn full-game []
   (gui/clear-screen)
   (gui/render-board board {:horizontal "---" :vertical "|" :corner "+"})
   (println)
@@ -124,10 +124,3 @@
             snake3 (if new-goal? (update snake2 :speed inc) snake2)
             updated-snake (if new-goal? (l/grow-snake snake3) snake3)]
         (recur {:old (snake :current) :current updated-snake} updated-goal)))))
-
-(when-not *compile-mode*
-  (try
-    (main)
-    (catch RuntimeException e
-      (println)
-      (println (php/-> e (getMessage))))))

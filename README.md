@@ -2,16 +2,27 @@
 
 A cli-game written in [Phel](https://phel-lang.org/).
 
+## Two versions in one repository
+
+This repository contains a [full-version](src/full-version/game.phel) and a [simplified version](src/simple-version/game.phel) of the snake game. 
+
+> I thought it might be useful to create a simplified version as introduction to the fundamentals of the language and the game itself.
+
+- In the simplified version you will find just the snake inside the board.
+- In the full version the snake will increase the speed as it reaches to goals.
+
 ## How to play
 
 ### Instructions
 
 Use the arrow keys to move the snake: `left-right-top-down`.
-You can use the `space-key` to accelerate a few cells the snake in the current direction.
-
-The snake will automatically increase the speed after each goal reached, unless you enable the "god mode" (using the argument `god-mode`).
-
 The game ends when the snake touches any border of the board.
+
+#### In the full version
+
+- You can use the `space-key` to accelerate a few cells the snake in the current direction.
+
+- The snake will automatically increase the speed after each goal reached, unless you enable the "god mode" (using the argument `god-mode`).
 
 ### Setup
 
@@ -37,6 +48,7 @@ You can define some optional arguments
 - height={N} -> height of the board
 - god-mode -> the snake won't increment the speed as it eats apples
 - debug -> you can see internal stats of the game
+- simple -> start the simplified game
 
 ```bash
 vendor/bin/phel run src/main.phel width=40 height=15 god-mode debug
