@@ -1,5 +1,5 @@
 (ns phel-snake-tests\util-test
-  (:require phel-snake\full-version\util :refer [get-from-list])
+  (:require phel-snake\util :refer [get-from-list])
   (:require phel\test :refer [deftest is]))
 
 (deftest test-get-from-list
