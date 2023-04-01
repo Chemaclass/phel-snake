@@ -1,9 +1,9 @@
 (ns phel-snake-tests\full-version\logic-test
   (:require phel-snake\full-version\logic :refer [snake
-                                     snake-reach-goal?
-                                     move-snake
-                                     collision-with-board?
-                                     grow-snake])
+                                                  snake-reach-goal?
+                                                  move-snake
+                                                  collision-with-board?
+                                                  grow-snake])
   (:require phel\test :refer [deftest is]))
 
 (deftest test-snake-reach-goal?
