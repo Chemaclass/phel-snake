@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-return [
-    'src-dirs' => ['src'],
-    'test-dirs' => ['tests'],
-    'vendor-dir' => 'vendor',
-    'out' => 'out',
-    'ignore-when-building' => ['local.phel'],
-    'keep-generated-temp-files' => false,
-];
+use Phel\Config\PhelConfig;
+
+return (new PhelConfig())
+    ->setSrcDirs(['src'])
+    ->setTestDirs(['tests'])
+    ->setVendorDir('vendor')
+    ->setOutDir('out')
+    ->setIgnoreWhenBuilding(['local.phel'])
+    ->setKeepGeneratedTempFiles(false);
