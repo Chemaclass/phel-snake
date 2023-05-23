@@ -15,9 +15,6 @@ use Phel\Compiler\CompilerFacadeInterface;
  * For example: `APP_ENV=local composer play`
  */
 return static function (GacelaConfig $config): void {
-    // Enabling the gacela file cache system to improve the class-resolver performance
-    $config->setFileCacheEnabled(true);
-
     // Registering a generic listener to know what's happening internally in Gacela
     $config->registerGenericListener(static function (GacelaEventInterface $event): void {
         echo $event->toString() . PHP_EOL;
