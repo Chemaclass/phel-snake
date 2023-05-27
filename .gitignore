@@ -7,4 +7,5 @@ out/
 src/local.phel
 *.cache
 .phel-repl-history
+composer.lock
 phel-config-local.php
