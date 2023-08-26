@@ -10,7 +10,7 @@
     "require": {
         "php": ">=8.0",
         "ext-readline": "*",
-        "phel-lang/phel-lang": "^0.10",
+        "phel-lang/phel-lang": "^0.11",
         "chemaclass/phel-cli-gui": "dev-main"
     },
     "require-dev": {
@@ -24,7 +24,7 @@
             "@play"
         ],
         "build": "vendor/bin/phel build --no-cache",
-        "play": "php play.php",
+        "play": "php out/play.php",
         "test": "vendor/bin/phel test",
         "format": "vendor/bin/phel format src tests"
     },

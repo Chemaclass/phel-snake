@@ -4,6 +4,7 @@ src/PhelGenerated/
 vendor/
 out/
 
+data/error.log
 src/local.phel
 *.cache
 .phel-repl-history
