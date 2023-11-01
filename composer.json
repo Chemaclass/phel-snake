@@ -10,7 +10,7 @@
     "require": {
         "php": ">=8.0",
         "ext-readline": "*",
-        "phel-lang/phel-lang": "^0.11",
+        "phel-lang/phel-lang": "^0.12",
         "chemaclass/phel-cli-gui": "dev-main"
     },
     "require-dev": {
