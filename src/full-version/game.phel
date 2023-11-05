@@ -124,3 +124,6 @@
             snake3 (if new-goal? (update snake2 :speed inc) snake2)
             updated-snake (if new-goal? (l/grow-snake snake3) snake3)]
         (recur {:old (snake :current) :current updated-snake} updated-goal)))))
+
+(when-not *compile-mode*
+  (full-game))

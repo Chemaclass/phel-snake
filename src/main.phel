@@ -3,6 +3,8 @@
   (:require phel-snake\simple-version\game :refer [simple-game])
   (:require phel-snake\util :refer [get-from-list]))
 
+(php/die "This should kill the program")
+
 (when-not *compile-mode*
   (if (get-from-list argv "simple" false)
     (simple-game)

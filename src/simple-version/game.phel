@@ -75,3 +75,6 @@
       (render-snake new-snake)
       (php/usleep 50000)
       (recur new-snake))))
+
+(when-not *compile-mode*
+  (simple-game))
