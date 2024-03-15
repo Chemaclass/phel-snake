@@ -8,8 +8,8 @@ This repository contains a [full-version](src/full-version/game.phel) and a [sim
 
 > I thought it might be useful to create a simplified version as introduction to the fundamentals of the language and the game itself.
 
-- In the simplified version you will find just the snake inside the board.
-- In the full version the snake will increase the speed as it reaches to goals.
+- In the simplified version, you will find just the snake inside the board.
+- In the full version, the snake will increase the speed as it reaches to goals.
 
 ## How to play
 
@@ -34,7 +34,7 @@ The game ends when the snake touches any border of the board.
 
 #### Locally (no Docker)
 
-1. Ensure you have PHP `>=8.0`
+1. Ensure you have PHP `>=8.2`
    1. Some help about how to install multiple PHP versions locally on [linux](https://github.com/phpbrew/phpbrew) and [Mac](https://github.com/shivammathur/homebrew-php)
 2. Clone this repo
 3. Install the dependencies: `./tools/composer install`
