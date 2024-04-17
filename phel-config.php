@@ -10,8 +10,8 @@ return (new PhelConfig())
     ->setTestDirs(['tests'])
     ->setVendorDir('vendor')
     ->setOut((new PhelOutConfig())
-        ->setDestDir('out')
         ->setMainPhelNamespace('phel-snake\main')
-        ->setMainPhpFilename('play'))
+        ->setMainPhpPath('out/main.php'))
     ->setIgnoreWhenBuilding(['local.phel'])
-    ->setKeepGeneratedTempFiles(false);
+    ->setKeepGeneratedTempFiles(false)
+;

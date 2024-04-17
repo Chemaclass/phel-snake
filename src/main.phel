@@ -3,7 +3,7 @@
   (:require phel-snake\simple-version\game :refer [simple-game])
   (:require phel-snake\util :refer [get-from-list]))
 
-(when-not *compile-mode*
+(when-not *build-mode*
   (if (get-from-list argv "simple" false)
     (simple-game)
     (full-game)))
