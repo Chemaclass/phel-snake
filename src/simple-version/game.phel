@@ -9,8 +9,10 @@
 (ns phel-snake\simple-version\game
   (:require phel-cli-gui\terminal-gui :as gui))
 
-(gui/add-output-formatter {:style-name "snake-head" :foreground "black" :background "red" :options ["bold"]})
-(gui/add-output-formatter {:style-name "snake-tail" :foreground "black" :background "green" :options ["bold"]})
+(gui/add-output-formatter {:style-name "snake-head"
+                           :foreground "black" :background "red" :options ["bold"]})
+(gui/add-output-formatter {:style-name "snake-tail"
+                           :foreground "black" :background "green" :options ["bold"]})
 
 (defstruct board-struct [width height])
 (defstruct snake-struct [direction speed head tail])
