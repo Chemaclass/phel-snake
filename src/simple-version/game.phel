@@ -7,7 +7,8 @@
 # Try it out: vendor/bin/phel run src/simple-version/game.phel
 #########################################################################################
 (ns phel-snake\simple-version\game
-  (:require phel-cli-gui\terminal-gui :as gui))
+  (:require phel-cli-gui\terminal-gui :as gui)
+  (:require phel-snake\util :refer [get-from-list]))
 
 (gui/add-output-formatter {:style-name "snake-head"
                            :foreground "black" :background "red" :options ["bold"]})
@@ -17,7 +18,9 @@
 (defstruct board-struct [width height])
 (defstruct snake-struct [direction speed head tail])
 
-(def board (board-struct 40 20))
+(def board-width (get-from-list argv "width" 40))
+(def board-height (get-from-list argv "height" 20))
+(def board (board-struct board-width board-height))
 
 # Hexadecimal keys
 (def directions
