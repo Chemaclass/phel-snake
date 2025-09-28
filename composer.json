@@ -8,10 +8,10 @@
     ],
     "license": "MIT",
     "require": {
-        "php": ">=8.2",
+        "php": ">=8.3",
         "ext-readline": "*",
-        "phel-lang/phel-lang": "^0.17",
-        "chemaclass/phel-cli-gui": "^0.3"
+        "phel-lang/phel-lang": "^0.22",
+        "chemaclass/phel-cli-gui": "dev-main"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest",
@@ -31,7 +31,7 @@
     "config": {
         "preferred-install": "dist",
         "platform": {
-            "php": "8.2"
+            "php": "8.3"
         }
     }
 }

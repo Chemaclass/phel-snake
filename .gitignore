@@ -1,5 +1,6 @@
 .idea/
 .gacela/
+.claude/
 src/PhelGenerated/
 vendor/
 out/
