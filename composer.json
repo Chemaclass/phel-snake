@@ -11,7 +11,7 @@
         "php": ">=8.3",
         "ext-readline": "*",
         "phel-lang/phel-lang": "^0.22",
-        "chemaclass/phel-cli-gui": "dev-main"
+        "chemaclass/phel-cli-gui": "^0.5"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest",

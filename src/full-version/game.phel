@@ -84,7 +84,7 @@
     (php/exit)))
 
 (defn render-stats [board snake]
-  (println (format "Speed: %d" (count (snake :tail))))
+  (println (format "\nSpeed: %d" (count (snake :tail))))
   (let [diff-time (- (php/microtime true) start-time)]
     (println (format "Time: %d secs" (php/round diff-time)))))
 
