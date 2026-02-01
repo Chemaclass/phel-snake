@@ -10,8 +10,8 @@
     "require": {
         "php": ">=8.3",
         "ext-readline": "*",
-        "phel-lang/phel-lang": "^0.23",
-        "chemaclass/phel-cli-gui": "^0.6"
+        "phel-lang/phel-lang": "^0.29",
+        "chemaclass/phel-cli-gui": "^0.7"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest",

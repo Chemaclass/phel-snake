@@ -34,7 +34,7 @@
                :right (update-in s [:head :x] inc)
                :up (update-in s [:head :y] dec)
                :down (update-in s [:head :y] inc))
-          new-tail (push (drop 1 (s2 :tail)) (s :head))
+          new-tail (push (into [] (drop 1 (s2 :tail))) (s :head))
           s3 (put s2 :tail new-tail)]
       (put s3 :direction next-direction))))
 
