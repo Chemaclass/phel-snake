@@ -48,6 +48,7 @@ vendor/bin/phel run src/main.phel [options]
 | `god-mode` | Disable speed increase |
 | `debug` | Show internal stats |
 | `simple` | Play simple version |
+| `wrap` | Snake wraps around walls instead of dying |
 
 Example:
 ```bash

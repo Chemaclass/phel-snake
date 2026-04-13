@@ -4,6 +4,7 @@
                                           move-snake
                                           collision-with-board?
                                           self-collision?
+                                          wrap-head
                                           grow-snake
                                           step-head])
   (:require phel\test :refer [deftest is]))
@@ -63,3 +64,21 @@
       "head not on any tail cell")
   (is (true? (self-collision? (snake :right 0 {:x 3 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])))
       "head overlaps tail cell"))
+
+(deftest test-wrap-head
+  (let [board {:width 10 :height 10}]
+    (is (= {:x 5 :y 5}
+           ((wrap-head board (snake :right 0 {:x 5 :y 5} [])) :head))
+        "inside play area => unchanged")
+    (is (= {:x 2 :y 5}
+           ((wrap-head board (snake :right 0 {:x 10 :y 5} [])) :head))
+        "crossed right wall => wraps to left edge")
+    (is (= {:x 9 :y 5}
+           ((wrap-head board (snake :left 0 {:x 1 :y 5} [])) :head))
+        "crossed left wall => wraps to right edge")
+    (is (= {:x 5 :y 1}
+           ((wrap-head board (snake :down 0 {:x 5 :y 9} [])) :head))
+        "crossed bottom wall => wraps to top")
+    (is (= {:x 5 :y 8}
+           ((wrap-head board (snake :up 0 {:x 5 :y 0} [])) :head))
+        "crossed top wall => wraps to bottom")))

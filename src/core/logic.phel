@@ -81,6 +81,21 @@
   (let [{:x hx :y hy} (s :head)]
     (some? (find #(and (= (% :x) hx) (= (% :y) hy)) (s :tail)))))
 
+(defn wrap-head
+  "Returns a snake whose head is wrapped to the opposite wall when it has
+  crossed the play-area boundary. Used in wrap-around mode."
+  [{:width w :height h} s]
+  (let [{:x x :y y} (s :head)
+        min-x (inc left-wall-x)
+        max-x (dec w)
+        min-y (inc top-wall-y)
+        max-y (- h 2)
+        wx (cond (> x max-x) min-x (< x min-x) max-x :else x)
+        wy (cond (> y max-y) min-y (< y min-y) max-y :else y)]
+    (if (and (= wx x) (= wy y))
+      s
+      (put s :head {:x wx :y wy}))))
+
 (defn- free-cells [board occ]
   (let [w (board :width) h (board :height)]
     (for [x :range [(inc left-wall-x) (dec w)]

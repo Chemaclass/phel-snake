@@ -42,7 +42,8 @@
         new-goal? (and (config :goals?) (not= goal updated-goal))
         moved (l/move-snake snake next-direction)
         scored (if new-goal? (update moved :score inc) moved)
-        next-snake (if (and new-goal? (config :grow?)) (l/grow-snake scored) scored)]
+        grown (if (and new-goal? (config :grow?)) (l/grow-snake scored) scored)
+        next-snake (if (config :wrap?) (l/wrap-head (config :board) grown) grown)]
     {:snake next-snake
      :goal updated-goal
      :accelerate-steps (if accelerate?
@@ -102,7 +103,7 @@
       (render-frame old-snake snake goal config start-time)
       (php/usleep (compute-delay snake config accelerate-steps))
       (gui/clear-output)
-      (when (or (l/collision-with-board? board snake)
+      (when (or (and (not (config :wrap?)) (l/collision-with-board? board snake))
                 (l/self-collision? snake))
         (finish board snake start-time))
       (let [input (gui/read-input 3)]

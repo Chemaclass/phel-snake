@@ -6,7 +6,8 @@
   [args]
   (let [simple? (contains-value? args "simple")
         debug? (contains-value? args "debug")
-        god-mode? (contains-value? args "god-mode")]
+        god-mode? (contains-value? args "god-mode")
+        wrap? (contains-value? args "wrap")]
     {:mode (if simple? :simple :full)
      :board {:width (get-int-arg args "width" (if simple? 40 42))
              :height (get-int-arg args "height" (if simple? 20 22))}
@@ -15,4 +16,5 @@
      :accelerate? (not simple?)
      :variable-speed? (and (not simple?) (not god-mode?))
      :debug? debug?
-     :god-mode? god-mode?}))
+     :god-mode? god-mode?
+     :wrap? wrap?}))
