@@ -39,7 +39,7 @@
 
 (defn- tick
   "Computes the next snake, goal, and accelerate counter for one tick."
-  [{:keys [snake goal config obstacles slow-ticks]} input accelerate-steps]
+  [{:keys [snake goal config obstacles slow-ticks combo]} input accelerate-steps]
   (let [next-direction (l/key->direction (gui/parse-key input))
         accelerate? (and (config :accelerate?)
                          (= (input :hex) l/key-space-hex))
@@ -48,10 +48,10 @@
                        goal)
         new-goal? (and (config :goals?) (not= goal updated-goal))
         bonus (when new-goal? (l/goal-bonus (get goal :type :normal)))
+        next-combo (l/advance-combo combo new-goal?)
+        delta (if new-goal? (* (bonus :score-delta) (next-combo :multiplier)) 0)
         moved (l/move-snake snake next-direction)
-        scored (if new-goal?
-                 (update moved :score #(+ % (bonus :score-delta)))
-                 moved)
+        scored (if new-goal? (update moved :score #(+ % delta)) moved)
         grown (if (and new-goal? (config :grow?) (bonus :grow?)) (l/grow-snake scored) scored)
         next-snake (if (config :wrap?) (l/wrap-head (config :board) grown) grown)
         next-slow (cond
@@ -61,17 +61,20 @@
     {:snake next-snake
      :goal updated-goal
      :slow-ticks next-slow
+     :combo next-combo
      :accelerate-steps (if accelerate?
                          accelerate-window
                          (max 0 (dec accelerate-steps)))}))
 
-(defn- render-frame [old-snake snake goal obstacles config start-time initial?]
+(defn- render-frame [old-snake snake goal obstacles combo config start-time initial?]
   (if (empty? old-snake)
     (r/render-snake snake)
     (r/render-snake-delta old-snake snake))
   (when initial? (r/render-obstacles obstacles))
   (when goal (r/render-goal goal))
   (r/render-stats snake start-time)
+  (when (and (combo :count) (> (combo :count) 1))
+    (println (format "Combo: x%d" (combo :multiplier))))
   (when (config :debug?)
     (println (format "; direction: %s  accelerate?: %s  god-mode?: %s"
                      (snake :direction)
@@ -118,8 +121,9 @@
            goal (initial-goal config snake0 obstacles)
            accelerate-steps 0
            slow-ticks 0
+           combo {:count 0 :ticks-left 0 :multiplier 1}
            initial? true]
-      (render-frame old-snake snake goal obstacles config start-time initial?)
+      (render-frame old-snake snake goal obstacles combo config start-time initial?)
       (php/usleep (compute-delay snake config accelerate-steps slow-ticks))
       (gui/clear-output)
       (when (or (and (not (config :wrap?)) (l/collision-with-board? board snake))
@@ -135,8 +139,9 @@
         (let [{:snake next-snake
                :goal next-goal
                :accelerate-steps next-accel
-               :slow-ticks next-slow}
+               :slow-ticks next-slow
+               :combo next-combo}
               (tick {:snake snake :goal goal :config config
-                     :obstacles obstacles :slow-ticks slow-ticks}
+                     :obstacles obstacles :slow-ticks slow-ticks :combo combo}
                     input accelerate-steps)]
-          (recur snake next-snake next-goal next-accel next-slow false))))))
+          (recur snake next-snake next-goal next-accel next-slow next-combo false))))))

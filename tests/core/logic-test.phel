@@ -6,6 +6,7 @@
                                           self-collision?
                                           wrap-head
                                           grow-snake
+                                          advance-combo
                                           step-head])
   (:require phel\test :refer [deftest is]))
 
@@ -64,6 +65,18 @@
       "head not on any tail cell")
   (is (true? (self-collision? (snake :right 0 {:x 3 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])))
       "head overlaps tail cell"))
+
+(deftest test-advance-combo
+  (let [zero {:count 0 :ticks-left 0 :multiplier 1}
+        first-eat (advance-combo zero true)]
+    (is (= 1 (first-eat :count)) "first eat starts the combo")
+    (is (= 1 (first-eat :multiplier)) "first eat has no multiplier")
+    (let [second-eat (advance-combo first-eat true)]
+      (is (= 2 (second-eat :count)) "second eat within window grows combo")
+      (is (= 2 (second-eat :multiplier)) "x2 on second consecutive eat"))
+    (let [ticked (advance-combo first-eat false)]
+      (is (= 1 (ticked :count)) "combo persists while window is open")
+      (is (= 1 (ticked :multiplier)) "no multiplier when not eating"))))
 
 (deftest test-wrap-head
   (let [board {:width 10 :height 10}]

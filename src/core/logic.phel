@@ -203,3 +203,22 @@
   "True when the snake head is on an obstacle cell."
   [obstacles s]
   (on-any-cell? obstacles (s :head)))
+
+(def combo-window-ticks 30)
+(def combo-multiplier-cap 5)
+
+(defn advance-combo
+  "Advance combo state by one tick.
+  - `ate?` true iff the snake consumed a goal this tick.
+  Returns {:count :ticks-left :multiplier} where :multiplier is the factor
+  to apply to the score delta for the goal eaten this tick (1 if none)."
+  [{:count c :ticks-left t} ate?]
+  (cond
+    ate?
+    (let [new-count (if (pos? t) (inc c) 1)
+          mult (min combo-multiplier-cap (max 1 new-count))]
+      {:count new-count :ticks-left combo-window-ticks :multiplier mult})
+    (pos? t)
+    (let [nt (dec t)]
+      {:count (if (pos? nt) c 0) :ticks-left nt :multiplier 1})
+    :else {:count 0 :ticks-left 0 :multiplier 1}))
