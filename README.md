@@ -31,6 +31,7 @@ Requires PHP `>=8.3` ([linux](https://github.com/phpbrew/phpbrew) | [Mac](https:
 
 - **Arrow keys**: Move the snake
 - **Space**: Accelerate (full version)
+- **P**: Pause / resume
 
 Game ends when the snake hits the border.
 

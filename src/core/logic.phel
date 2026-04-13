@@ -12,6 +12,7 @@
   {:left :left :right :right :up :up :down :down})
 
 (def key-space-hex "20")
+(def key-p-hex "70")
 
 (def- left-wall-x 1)
 (def- top-wall-y 0)

@@ -59,6 +59,19 @@
                      (config :accelerate?)
                      (config :god-mode?)))))
 
+(defn- wait-while-paused
+  "Blocks until the user presses 'p' again. Shows a PAUSED banner."
+  [board]
+  (let [x (php/intval (php/round (- (/ (board :width) 2) 3)))
+        y (php/intval (php/round (/ (board :height) 2)))]
+    (gui/render x y "PAUSED")
+    (loop []
+      (php/usleep 50000)
+      (let [input (gui/read-input 3)]
+        (when-not (= (input :hex) l/key-p-hex)
+          (recur))))
+    (gui/render x y "      ")))
+
 (defn- finish [board snake start-time]
   (r/render-game-over board snake)
   (println)
@@ -86,7 +99,9 @@
       (when (or (l/collision-with-board? board snake)
                 (l/self-collision? snake))
         (finish board snake start-time))
-      (let [input (gui/read-input 3)
-            {:snake next-snake :goal next-goal :accelerate-steps next-accel}
-            (tick {:snake snake :goal goal :config config} input accelerate-steps)]
-        (recur snake next-snake next-goal next-accel)))))
+      (let [input (gui/read-input 3)]
+        (when (= (input :hex) l/key-p-hex)
+          (wait-while-paused board))
+        (let [{:snake next-snake :goal next-goal :accelerate-steps next-accel}
+              (tick {:snake snake :goal goal :config config} input accelerate-steps)]
+          (recur snake next-snake next-goal next-accel))))))
