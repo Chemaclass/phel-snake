@@ -1,0 +1,34 @@
+(ns phel-snake\highscore)
+
+(defn- home-dir []
+  (or (php/getenv "HOME")
+      (php/sys_get_temp_dir)))
+
+(defn path
+  "Filesystem path used to persist the high score."
+  []
+  (str (home-dir) "/.phel-snake-highscore"))
+
+(defn load
+  "Returns the stored high score, or 0 when absent or unreadable."
+  []
+  (let [p (path)]
+    (if (php/file_exists p)
+      (php/intval (php/trim (php/file_get_contents p)))
+      0)))
+
+(defn save
+  "Writes `score` to disk. Returns true on success."
+  [score]
+  (not= false (php/file_put_contents (path) (str score))))
+
+(defn update-if-higher
+  "Persists `score` when greater than the stored high score.
+  Returns a map with :previous, :current, :new-record?."
+  [score]
+  (let [previous (load)
+        record? (> score previous)]
+    (when record? (save score))
+    {:previous previous
+     :current score
+     :new-record? record?}))

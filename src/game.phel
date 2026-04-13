@@ -1,7 +1,8 @@
 (ns phel-snake\game
   (:require [phel-cli-gui\terminal-gui :as gui]
             [phel-snake\core\logic :as l]
-            [phel-snake\core\render :as r]))
+            [phel-snake\core\render :as r]
+            [phel-snake\highscore :as hs]))
 
 (def- base-delay-us 140000)
 (def- difficulty-scale 10000)
@@ -74,11 +75,15 @@
 
 (defn- finish [board snake start-time]
   (r/render-game-over board snake)
-  (println)
-  (println)
-  (println (format "Final Score: %d points" (snake :score)))
-  (println (format "Total Time: %d secs"
-                   (php/round (- (php/microtime true) start-time))))
+  (let [{:previous prev :new-record? record?} (hs/update-if-higher (snake :score))]
+    (println)
+    (println)
+    (println (format "Final Score: %d points" (snake :score)))
+    (println (format "Total Time: %d secs"
+                     (php/round (- (php/microtime true) start-time))))
+    (if record?
+      (println (format "NEW HIGH SCORE! (previous: %d)" prev))
+      (println (format "High Score: %d" prev))))
   (println "Press any key to exit...")
   (gui/read-input 1)
   (php/exit))
