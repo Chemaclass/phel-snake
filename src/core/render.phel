@@ -8,6 +8,10 @@
                              :foreground "black" :background "red" :options ["bold"]})
   (gui/add-output-formatter {:style-name "snake-tail"
                              :foreground "black" :background "green" :options ["bold"]})
+  (gui/add-output-formatter {:style-name "snake2-head"
+                             :foreground "black" :background "magenta" :options ["bold"]})
+  (gui/add-output-formatter {:style-name "snake2-tail"
+                             :foreground "black" :background "cyan" :options ["bold"]})
   (gui/add-output-formatter {:style-name "goal"
                              :foreground "black" :background "magenta" :options ["bold"]})
   (gui/add-output-formatter {:style-name "goal-golden"
@@ -21,11 +25,13 @@
   (gui/clear-screen)
   (gui/render-board board border-style))
 
-(defn render-snake [s]
-  (for [t :in (s :tail)]
-    (gui/render (t :x) (t :y) " " "snake-tail"))
-  (let [h (s :head)]
-    (gui/render (h :x) (h :y) " " "snake-head")))
+(defn render-snake
+  ([s] (render-snake s "snake-head" "snake-tail"))
+  ([s head-style tail-style]
+   (for [t :in (s :tail)]
+     (gui/render (t :x) (t :y) " " tail-style))
+   (let [h (s :head)]
+     (gui/render (h :x) (h :y) " " head-style))))
 
 (defn clear-snake [s]
   (when-let [tail (s :tail)]
@@ -44,19 +50,20 @@
   "Incrementally updates the drawn snake: clears the dropped tail tip, repaints
   the previous head as tail, and draws the new head. O(1) per frame instead of
   O(length), matching the snake's actual motion."
-  [old-snake new-snake]
-  (let [old-tail (get old-snake :tail)
-        old-head (get old-snake :head)
-        new-tail (new-snake :tail)
-        new-head (new-snake :head)]
-    (when (and old-tail (not (empty? old-tail)))
-      (let [dropped (first old-tail)]
-        (when-not (or (same-cell? dropped new-head)
-                      (in-tail? new-tail dropped))
-          (gui/render (dropped :x) (dropped :y) " "))))
-    (when old-head
-      (gui/render (old-head :x) (old-head :y) " " "snake-tail"))
-    (gui/render (new-head :x) (new-head :y) " " "snake-head")))
+  ([old-snake new-snake] (render-snake-delta old-snake new-snake "snake-head" "snake-tail"))
+  ([old-snake new-snake head-style tail-style]
+   (let [old-tail (get old-snake :tail)
+         old-head (get old-snake :head)
+         new-tail (new-snake :tail)
+         new-head (new-snake :head)]
+     (when (and old-tail (not (empty? old-tail)))
+       (let [dropped (first old-tail)]
+         (when-not (or (same-cell? dropped new-head)
+                       (in-tail? new-tail dropped))
+           (gui/render (dropped :x) (dropped :y) " "))))
+     (when old-head
+       (gui/render (old-head :x) (old-head :y) " " tail-style))
+     (gui/render (new-head :x) (new-head :y) " " head-style))))
 
 (defn- goal-style [goal]
   (case (get goal :type :normal)

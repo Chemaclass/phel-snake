@@ -11,6 +11,9 @@
 (def key->direction
   {:left :left :right :right :up :up :down :down})
 
+(def wasd->direction
+  {"w" :up "s" :down "a" :left "d" :right})
+
 (def key-space-hex "20")
 (def key-p-hex "70")
 

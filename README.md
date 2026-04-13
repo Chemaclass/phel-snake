@@ -29,7 +29,8 @@ Requires PHP `>=8.3` ([linux](https://github.com/phpbrew/phpbrew) | [Mac](https:
 
 ## Controls
 
-- **Arrow keys**: Move the snake
+- **Arrow keys**: Move the snake (or player 1 in two-player mode)
+- **WASD**: Move player 2 in two-player mode
 - **Space**: Accelerate (full version)
 - **P**: Pause / resume
 
@@ -53,6 +54,7 @@ vendor/bin/phel run src/main.phel [options]
 | `no-power-ups` | Disable golden/slow-down power-ups in full mode |
 | `no-levels` | Disable level progression (new walls every few goals) |
 | `level-every=N` | Goals needed per level (default 5) |
+| `two-player` | Two snakes share the board (arrows vs WASD) |
 
 Example:
 ```bash

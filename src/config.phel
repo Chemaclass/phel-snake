@@ -28,4 +28,5 @@
      :obstacle-count (obstacle-count args simple?)
      :power-ups? (and (not simple?) (not (contains-value? args "no-power-ups")))
      :levels? (and (not simple?) (not (contains-value? args "no-levels")))
-     :level-every (get-int-arg args "level-every" 5)}))
+     :level-every (get-int-arg args "level-every" 5)
+     :two-player? (contains-value? args "two-player")}))
