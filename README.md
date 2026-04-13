@@ -51,6 +51,8 @@ vendor/bin/phel run src/main.phel [options]
 | `wrap` | Snake wraps around walls instead of dying |
 | `obstacles[=N]` | Scatter N obstacles (default 10) on the board |
 | `no-power-ups` | Disable golden/slow-down power-ups in full mode |
+| `no-levels` | Disable level progression (new walls every few goals) |
+| `level-every=N` | Goals needed per level (default 5) |
 
 Example:
 ```bash

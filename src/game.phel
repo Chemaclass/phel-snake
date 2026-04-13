@@ -109,19 +109,33 @@
   (gui/read-input 1)
   (php/exit))
 
+(defn- maybe-level-up
+  "Spawns an extra wall segment when the score crosses the next threshold.
+  Returns [new-obstacles new-level new-walls-or-nil]."
+  [config snake obstacles goal level]
+  (if (and (config :levels?)
+           (>= (snake :score) (* level (config :level-every))))
+    (let [walls (l/spawn-wall-segment (config :board) snake obstacles goal 3)]
+      (if (empty? walls)
+        [obstacles (inc level) nil]
+        [(into obstacles walls) (inc level) walls]))
+    [obstacles level nil]))
+
 (defn run [config]
   (r/setup-styles)
   (r/render-board (config :board))
   (let [start-time (php/microtime true)
         board (config :board)
         snake0 (initial-snake config)
-        obstacles (initial-obstacles config snake0)]
+        obstacles0 (initial-obstacles config snake0)]
     (loop [old-snake {}
            snake snake0
-           goal (initial-goal config snake0 obstacles)
+           goal (initial-goal config snake0 obstacles0)
+           obstacles obstacles0
            accelerate-steps 0
            slow-ticks 0
            combo {:count 0 :ticks-left 0 :multiplier 1}
+           level 1
            initial? true]
       (render-frame old-snake snake goal obstacles combo config start-time initial?)
       (php/usleep (compute-delay snake config accelerate-steps slow-ticks))
@@ -143,5 +157,9 @@
                :combo next-combo}
               (tick {:snake snake :goal goal :config config
                      :obstacles obstacles :slow-ticks slow-ticks :combo combo}
-                    input accelerate-steps)]
-          (recur snake next-snake next-goal next-accel next-slow next-combo false))))))
+                    input accelerate-steps)
+              [next-obs next-level new-walls]
+              (maybe-level-up config next-snake obstacles next-goal level)]
+          (when new-walls (r/render-obstacles new-walls))
+          (recur snake next-snake next-goal next-obs
+                 next-accel next-slow next-combo next-level false))))))

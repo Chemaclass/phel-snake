@@ -199,6 +199,29 @@
             (recur (push obs pos) (put blocked k true) 0)
             (recur obs blocked (inc attempts))))))))
 
+(defn spawn-wall-segment
+  "Finds `len` contiguous free cells in a random direction, avoiding snake,
+  existing obstacles, and the current goal. Returns a vector of cells, or
+  an empty vector if no suitable location is found."
+  [board s obstacles goal len]
+  (let [blocked (cond-> (occupied-set s)
+                  (and obstacles (not (empty? obstacles))) (merge (cells-set obstacles))
+                  goal (put (cell-key goal) true))
+        dirs [{:dx 1 :dy 0} {:dx -1 :dy 0} {:dx 0 :dy 1} {:dx 0 :dy -1}]]
+    (loop [attempts 0]
+      (if (>= attempts 30)
+        []
+        (let [start {:x (rand-int (board :width))
+                     :y (rand-int (board :height))}
+              dir (get dirs (rand-int 4))
+              cells (into [] (for [i :range [0 len]]
+                               {:x (+ (start :x) (* i (dir :dx)))
+                                :y (+ (start :y) (* i (dir :dy)))}))
+              all-free? (every? #(and (inside-play-area? board %)
+                                      (not (contains? blocked (cell-key %))))
+                                cells)]
+          (if all-free? cells (recur (inc attempts))))))))
+
 (defn obstacle-collision?
   "True when the snake head is on an obstacle cell."
   [obstacles s]
