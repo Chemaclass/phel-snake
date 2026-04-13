@@ -115,25 +115,49 @@
 
 (def- random-attempt-limit 50)
 
+(defn random-goal-type
+  "Picks a goal type weighted toward :normal. ~8% :golden, ~8% :slow."
+  []
+  (let [r (rand-int 100)]
+    (cond
+      (< r 8) :golden
+      (< r 16) :slow
+      :else :normal)))
+
+(defn goal-bonus
+  "Effect granted by consuming a goal of the given type."
+  [type]
+  (case type
+    :golden {:score-delta 5 :grow? true :slow-ticks 0}
+    :slow   {:score-delta 2 :grow? true :slow-ticks 40}
+    {:score-delta 1 :grow? true :slow-ticks 0}))
+
+(defn- random-free-pos [board occ]
+  (loop [attempts 0]
+    (let [pos {:x (rand-int (board :width))
+               :y (rand-int (board :height))}]
+      (cond
+        (and (inside-play-area? board pos) (not (on-occupied? occ pos))) pos
+        (>= attempts random-attempt-limit)
+        (let [free (free-cells board occ)]
+          (when-not (empty? free) (get free (rand-int (count free)))))
+        :else (recur (inc attempts))))))
+
 (defn generate-new-goal
   "Random cell inside the play area; avoids the snake body (and obstacles, if
-  given). Falls back to a uniform pick over free cells after repeated
-  collisions, so placement remains fast when the board is mostly full."
-  ([board] (generate-new-goal board nil nil))
-  ([board s] (generate-new-goal board s nil))
-  ([board s obstacles]
+  given). When `power-ups?` is truthy, the returned goal includes a random
+  :type (:normal / :golden / :slow). Falls back to a uniform pick over free
+  cells after repeated collisions."
+  ([board] (generate-new-goal board nil nil false))
+  ([board s] (generate-new-goal board s nil false))
+  ([board s obstacles] (generate-new-goal board s obstacles false))
+  ([board s obstacles power-ups?]
    (let [occ (cond-> (if s (occupied-set s) {})
                (and obstacles (not (empty? obstacles)))
-               (merge (cells-set obstacles)))]
-     (loop [attempts 0]
-       (let [pos {:x (rand-int (board :width))
-                  :y (rand-int (board :height))}]
-         (cond
-           (and (inside-play-area? board pos) (not (on-occupied? occ pos))) pos
-           (>= attempts random-attempt-limit)
-           (let [free (free-cells board occ)]
-             (when-not (empty? free) (get free (rand-int (count free)))))
-           :else (recur (inc attempts))))))))
+               (merge (cells-set obstacles)))
+         pos (random-free-pos board occ)]
+     (when pos
+       (merge pos {:type (if power-ups? (random-goal-type) :normal)})))))
 
 (defn generate-snake-head
   "Random starting head position near the left side of the board."
@@ -146,10 +170,11 @@
 
 (defn update-goal
   "Returns a fresh goal if the snake reached `g`, else `g` unchanged."
-  ([s g board] (update-goal s g board nil))
-  ([s g board obstacles]
+  ([s g board] (update-goal s g board nil false))
+  ([s g board obstacles] (update-goal s g board obstacles false))
+  ([s g board obstacles power-ups?]
    (if (snake-reach-goal? s g)
-     (generate-new-goal board s obstacles)
+     (generate-new-goal board s obstacles power-ups?)
      g)))
 
 (defn generate-obstacles

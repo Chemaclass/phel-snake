@@ -10,8 +10,12 @@
                              :foreground "black" :background "green" :options ["bold"]})
   (gui/add-output-formatter {:style-name "goal"
                              :foreground "black" :background "magenta" :options ["bold"]})
+  (gui/add-output-formatter {:style-name "goal-golden"
+                             :foreground "black" :background "yellow" :options ["bold"]})
+  (gui/add-output-formatter {:style-name "goal-slow"
+                             :foreground "black" :background "cyan" :options ["bold"]})
   (gui/add-output-formatter {:style-name "obstacle"
-                             :foreground "white" :background "yellow" :options ["bold"]}))
+                             :foreground "white" :background "blue" :options ["bold"]}))
 
 (defn render-board [board]
   (gui/clear-screen)
@@ -54,8 +58,20 @@
       (gui/render (old-head :x) (old-head :y) " " "snake-tail"))
     (gui/render (new-head :x) (new-head :y) " " "snake-head")))
 
+(defn- goal-style [goal]
+  (case (get goal :type :normal)
+    :golden "goal-golden"
+    :slow "goal-slow"
+    "goal"))
+
+(defn- goal-char [goal]
+  (case (get goal :type :normal)
+    :golden "$"
+    :slow "~"
+    " "))
+
 (defn render-goal [goal]
-  (gui/render (goal :x) (goal :y) " " "goal"))
+  (gui/render (goal :x) (goal :y) (goal-char goal) (goal-style goal)))
 
 (defn render-obstacles [obstacles]
   (for [o :in (or obstacles [])]

@@ -12,14 +12,15 @@
 (defn- fixed-delay [config]
   (if (= :simple (config :mode)) simple-delay-us base-delay-us))
 
-(defn- compute-delay [s config accelerate-steps]
-  (cond
-    (pos? accelerate-steps) 0
-    (config :variable-speed?)
-    (let [base (- base-delay-us (* (s :score) difficulty-scale))
-          horiz? (or (= :left (s :direction)) (= :right (s :direction)))]
-      (php/intval (/ (max base 0) (if horiz? 2 1))))
-    :else (fixed-delay config)))
+(defn- compute-delay [s config accelerate-steps slow-ticks]
+  (let [base (cond
+               (pos? accelerate-steps) 0
+               (config :variable-speed?)
+               (let [b (- base-delay-us (* (s :score) difficulty-scale))
+                     horiz? (or (= :left (s :direction)) (= :right (s :direction)))]
+                 (php/intval (/ (max b 0) (if horiz? 2 1))))
+               :else (fixed-delay config))]
+    (if (pos? slow-ticks) (* base 2) base)))
 
 (defn- initial-snake [config]
   (if (= :simple (config :mode))
@@ -28,7 +29,7 @@
 
 (defn- initial-goal [config snake obstacles]
   (when (config :goals?)
-    (l/generate-new-goal (config :board) snake obstacles)))
+    (l/generate-new-goal (config :board) snake obstacles (config :power-ups?))))
 
 (defn- initial-obstacles [config snake]
   (let [n (or (config :obstacle-count) 0)]
@@ -38,20 +39,28 @@
 
 (defn- tick
   "Computes the next snake, goal, and accelerate counter for one tick."
-  [{:keys [snake goal config obstacles]} input accelerate-steps]
+  [{:keys [snake goal config obstacles slow-ticks]} input accelerate-steps]
   (let [next-direction (l/key->direction (gui/parse-key input))
         accelerate? (and (config :accelerate?)
                          (= (input :hex) l/key-space-hex))
         updated-goal (if (config :goals?)
-                       (l/update-goal snake goal (config :board) obstacles)
+                       (l/update-goal snake goal (config :board) obstacles (config :power-ups?))
                        goal)
         new-goal? (and (config :goals?) (not= goal updated-goal))
+        bonus (when new-goal? (l/goal-bonus (get goal :type :normal)))
         moved (l/move-snake snake next-direction)
-        scored (if new-goal? (update moved :score inc) moved)
-        grown (if (and new-goal? (config :grow?)) (l/grow-snake scored) scored)
-        next-snake (if (config :wrap?) (l/wrap-head (config :board) grown) grown)]
+        scored (if new-goal?
+                 (update moved :score #(+ % (bonus :score-delta)))
+                 moved)
+        grown (if (and new-goal? (config :grow?) (bonus :grow?)) (l/grow-snake scored) scored)
+        next-snake (if (config :wrap?) (l/wrap-head (config :board) grown) grown)
+        next-slow (cond
+                    (and bonus (pos? (bonus :slow-ticks))) (bonus :slow-ticks)
+                    (pos? slow-ticks) (dec slow-ticks)
+                    :else 0)]
     {:snake next-snake
      :goal updated-goal
+     :slow-ticks next-slow
      :accelerate-steps (if accelerate?
                          accelerate-window
                          (max 0 (dec accelerate-steps)))}))
@@ -108,9 +117,10 @@
            snake snake0
            goal (initial-goal config snake0 obstacles)
            accelerate-steps 0
+           slow-ticks 0
            initial? true]
       (render-frame old-snake snake goal obstacles config start-time initial?)
-      (php/usleep (compute-delay snake config accelerate-steps))
+      (php/usleep (compute-delay snake config accelerate-steps slow-ticks))
       (gui/clear-output)
       (when (or (and (not (config :wrap?)) (l/collision-with-board? board snake))
                 (l/self-collision? snake)
@@ -122,7 +132,11 @@
           (r/render-obstacles obstacles)
           (when goal (r/render-goal goal))
           (r/render-snake snake))
-        (let [{:snake next-snake :goal next-goal :accelerate-steps next-accel}
-              (tick {:snake snake :goal goal :config config :obstacles obstacles}
+        (let [{:snake next-snake
+               :goal next-goal
+               :accelerate-steps next-accel
+               :slow-ticks next-slow}
+              (tick {:snake snake :goal goal :config config
+                     :obstacles obstacles :slow-ticks slow-ticks}
                     input accelerate-steps)]
-          (recur snake next-snake next-goal next-accel false))))))
+          (recur snake next-snake next-goal next-accel next-slow false))))))

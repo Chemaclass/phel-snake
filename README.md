@@ -50,6 +50,7 @@ vendor/bin/phel run src/main.phel [options]
 | `simple` | Play simple version |
 | `wrap` | Snake wraps around walls instead of dying |
 | `obstacles[=N]` | Scatter N obstacles (default 10) on the board |
+| `no-power-ups` | Disable golden/slow-down power-ups in full mode |
 
 Example:
 ```bash

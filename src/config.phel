@@ -25,4 +25,5 @@
      :debug? debug?
      :god-mode? god-mode?
      :wrap? wrap?
-     :obstacle-count (obstacle-count args simple?)}))
+     :obstacle-count (obstacle-count args simple?)
+     :power-ups? (and (not simple?) (not (contains-value? args "no-power-ups")))}))
