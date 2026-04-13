@@ -9,7 +9,7 @@
   []
   (str (home-dir) "/.phel-snake-highscore"))
 
-(defn load
+(defn load-score
   "Returns the stored high score, or 0 when absent or unreadable."
   []
   (let [p (path)]
@@ -17,7 +17,7 @@
       (php/intval (php/trim (php/file_get_contents p)))
       0)))
 
-(defn save
+(defn save-score
   "Writes `score` to disk. Returns true on success."
   [score]
   (not= false (php/file_put_contents (path) (str score))))
@@ -26,9 +26,9 @@
   "Persists `score` when greater than the stored high score.
   Returns a map with :previous, :current, :new-record?."
   [score]
-  (let [previous (load)
+  (let [previous (load-score)
         record? (> score previous)]
-    (when record? (save score))
+    (when record? (save-score score))
     {:previous previous
      :current score
      :new-record? record?}))
