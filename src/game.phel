@@ -26,18 +26,24 @@
     (l/snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])
     (l/snake :right 0 (l/generate-snake-head (config :board)) [])))
 
-(defn- initial-goal [config snake]
+(defn- initial-goal [config snake obstacles]
   (when (config :goals?)
-    (l/generate-new-goal (config :board) snake)))
+    (l/generate-new-goal (config :board) snake obstacles)))
+
+(defn- initial-obstacles [config snake]
+  (let [n (or (config :obstacle-count) 0)]
+    (if (pos? n)
+      (l/generate-obstacles (config :board) snake n)
+      [])))
 
 (defn- tick
   "Computes the next snake, goal, and accelerate counter for one tick."
-  [{:keys [snake goal config]} input accelerate-steps]
+  [{:keys [snake goal config obstacles]} input accelerate-steps]
   (let [next-direction (l/key->direction (gui/parse-key input))
         accelerate? (and (config :accelerate?)
                          (= (input :hex) l/key-space-hex))
         updated-goal (if (config :goals?)
-                       (l/update-goal snake goal (config :board))
+                       (l/update-goal snake goal (config :board) obstacles)
                        goal)
         new-goal? (and (config :goals?) (not= goal updated-goal))
         moved (l/move-snake snake next-direction)
@@ -50,10 +56,11 @@
                          accelerate-window
                          (max 0 (dec accelerate-steps)))}))
 
-(defn- render-frame [old-snake snake goal config start-time]
+(defn- render-frame [old-snake snake goal obstacles config start-time initial?]
   (if (empty? old-snake)
     (r/render-snake snake)
     (r/render-snake-delta old-snake snake))
+  (when initial? (r/render-obstacles obstacles))
   (when goal (r/render-goal goal))
   (r/render-stats snake start-time)
   (when (config :debug?)
@@ -95,20 +102,27 @@
   (r/render-board (config :board))
   (let [start-time (php/microtime true)
         board (config :board)
-        snake0 (initial-snake config)]
+        snake0 (initial-snake config)
+        obstacles (initial-obstacles config snake0)]
     (loop [old-snake {}
            snake snake0
-           goal (initial-goal config snake0)
-           accelerate-steps 0]
-      (render-frame old-snake snake goal config start-time)
+           goal (initial-goal config snake0 obstacles)
+           accelerate-steps 0
+           initial? true]
+      (render-frame old-snake snake goal obstacles config start-time initial?)
       (php/usleep (compute-delay snake config accelerate-steps))
       (gui/clear-output)
       (when (or (and (not (config :wrap?)) (l/collision-with-board? board snake))
-                (l/self-collision? snake))
+                (l/self-collision? snake)
+                (l/obstacle-collision? obstacles snake))
         (finish board snake start-time))
       (let [input (gui/read-input 3)]
         (when (= (input :hex) l/key-p-hex)
-          (wait-while-paused board))
+          (wait-while-paused board)
+          (r/render-obstacles obstacles)
+          (when goal (r/render-goal goal))
+          (r/render-snake snake))
         (let [{:snake next-snake :goal next-goal :accelerate-steps next-accel}
-              (tick {:snake snake :goal goal :config config} input accelerate-steps)]
-          (recur snake next-snake next-goal next-accel))))))
+              (tick {:snake snake :goal goal :config config :obstacles obstacles}
+                    input accelerate-steps)]
+          (recur snake next-snake next-goal next-accel false))))))

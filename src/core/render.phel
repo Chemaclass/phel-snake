@@ -9,7 +9,9 @@
   (gui/add-output-formatter {:style-name "snake-tail"
                              :foreground "black" :background "green" :options ["bold"]})
   (gui/add-output-formatter {:style-name "goal"
-                             :foreground "black" :background "magenta" :options ["bold"]}))
+                             :foreground "black" :background "magenta" :options ["bold"]})
+  (gui/add-output-formatter {:style-name "obstacle"
+                             :foreground "white" :background "yellow" :options ["bold"]}))
 
 (defn render-board [board]
   (gui/clear-screen)
@@ -54,6 +56,10 @@
 
 (defn render-goal [goal]
   (gui/render (goal :x) (goal :y) " " "goal"))
+
+(defn render-obstacles [obstacles]
+  (for [o :in (or obstacles [])]
+    (gui/render (o :x) (o :y) " " "obstacle")))
 
 (defn render-stats [s start-time]
   (println (format "\nScore: %d" (s :score)))

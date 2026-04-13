@@ -69,11 +69,21 @@
           {(cell-key (s :head)) true}
           (s :tail)))
 
+(defn cells-set
+  "Set of cells (as `x,y` keys) from a sequence of {:x :y} cells."
+  [cells]
+  (reduce (fn [acc c] (put acc (cell-key c) true)) {} (or cells [])))
+
 (defn- on-occupied? [occ pos]
   (contains? occ (cell-key pos)))
 
 (defn- on-snake? [s pos]
   (on-occupied? (occupied-set s) pos))
+
+(defn on-any-cell?
+  "True when `pos` matches any cell in `cells`."
+  [cells pos]
+  (on-occupied? (cells-set cells) pos))
 
 (defn self-collision?
   "True when the snake head overlaps any cell of its own tail."
@@ -106,12 +116,15 @@
 (def- random-attempt-limit 50)
 
 (defn generate-new-goal
-  "Random cell inside the play area; avoids the snake body when `s` is given.
-  Falls back to a uniform pick over free cells after repeated collisions, so
-  placement remains fast even when the snake covers most of the board."
-  ([board] (generate-new-goal board nil))
-  ([board s]
-   (let [occ (if s (occupied-set s) {})]
+  "Random cell inside the play area; avoids the snake body (and obstacles, if
+  given). Falls back to a uniform pick over free cells after repeated
+  collisions, so placement remains fast when the board is mostly full."
+  ([board] (generate-new-goal board nil nil))
+  ([board s] (generate-new-goal board s nil))
+  ([board s obstacles]
+   (let [occ (cond-> (if s (occupied-set s) {})
+               (and obstacles (not (empty? obstacles)))
+               (merge (cells-set obstacles)))]
      (loop [attempts 0]
        (let [pos {:x (rand-int (board :width))
                   :y (rand-int (board :height))}]
@@ -133,7 +146,35 @@
 
 (defn update-goal
   "Returns a fresh goal if the snake reached `g`, else `g` unchanged."
-  [s g board]
-  (if (snake-reach-goal? s g)
-    (generate-new-goal board s)
-    g))
+  ([s g board] (update-goal s g board nil))
+  ([s g board obstacles]
+   (if (snake-reach-goal? s g)
+     (generate-new-goal board s obstacles)
+     g)))
+
+(defn generate-obstacles
+  "Random obstacle cells in the play area, avoiding the snake and a short
+  corridor in front of it so spawning isn't an instant death."
+  [board s n]
+  (let [dir (direction-vectors (s :direction))
+        reserved-cells (into [] (for [i :range [1 7]]
+                                  {:x (+ (get-in s [:head :x]) (* i (dir :dx)))
+                                   :y (+ (get-in s [:head :y]) (* i (dir :dy)))}))
+        reserved (merge (occupied-set s) (cells-set reserved-cells))]
+    (loop [obs [] blocked reserved attempts 0]
+      (cond
+        (= (count obs) n) obs
+        (>= attempts (* n 20)) obs
+        :else
+        (let [pos {:x (rand-int (board :width))
+                   :y (rand-int (board :height))}
+              k (cell-key pos)]
+          (if (and (inside-play-area? board pos)
+                   (not (contains? blocked k)))
+            (recur (push obs pos) (put blocked k true) 0)
+            (recur obs blocked (inc attempts))))))))
+
+(defn obstacle-collision?
+  "True when the snake head is on an obstacle cell."
+  [obstacles s]
+  (on-any-cell? obstacles (s :head)))

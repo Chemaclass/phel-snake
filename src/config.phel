@@ -1,6 +1,13 @@
 (ns phel-snake\config
   (:require [phel-snake\util :refer [get-int-arg]]))
 
+(defn- obstacle-count [args simple?]
+  (let [explicit (get-int-arg args "obstacles" -1)]
+    (cond
+      (>= explicit 0) explicit
+      (contains-value? args "obstacles") 10
+      :else 0)))
+
 (defn parse-config
   "Build the game config map from command-line args."
   [args]
@@ -17,4 +24,5 @@
      :variable-speed? (and (not simple?) (not god-mode?))
      :debug? debug?
      :god-mode? god-mode?
-     :wrap? wrap?}))
+     :wrap? wrap?
+     :obstacle-count (obstacle-count args simple?)}))

@@ -49,6 +49,7 @@ vendor/bin/phel run src/main.phel [options]
 | `debug` | Show internal stats |
 | `simple` | Play simple version |
 | `wrap` | Snake wraps around walls instead of dying |
+| `obstacles[=N]` | Scatter N obstacles (default 10) on the board |
 
 Example:
 ```bash
