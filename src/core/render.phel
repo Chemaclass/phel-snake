@@ -28,6 +28,30 @@
     (let [h (s :head)]
       (gui/render (h :x) (h :y) " "))))
 
+(defn- same-cell? [a b]
+  (and (= (a :x) (b :x)) (= (a :y) (b :y))))
+
+(defn- in-tail? [tail cell]
+  (some? (find #(same-cell? % cell) tail)))
+
+(defn render-snake-delta
+  "Incrementally updates the drawn snake: clears the dropped tail tip, repaints
+  the previous head as tail, and draws the new head. O(1) per frame instead of
+  O(length), matching the snake's actual motion."
+  [old-snake new-snake]
+  (let [old-tail (get old-snake :tail)
+        old-head (get old-snake :head)
+        new-tail (new-snake :tail)
+        new-head (new-snake :head)]
+    (when (and old-tail (not (empty? old-tail)))
+      (let [dropped (first old-tail)]
+        (when-not (or (same-cell? dropped new-head)
+                      (in-tail? new-tail dropped))
+          (gui/render (dropped :x) (dropped :y) " "))))
+    (when old-head
+      (gui/render (old-head :x) (old-head :y) " " "snake-tail"))
+    (gui/render (new-head :x) (new-head :y) " " "snake-head")))
+
 (defn render-goal [goal]
   (gui/render (goal :x) (goal :y) " " "goal"))
 

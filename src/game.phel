@@ -50,8 +50,9 @@
                          (max 0 (dec accelerate-steps)))}))
 
 (defn- render-frame [old-snake snake goal config start-time]
-  (r/clear-snake old-snake)
-  (r/render-snake snake)
+  (if (empty? old-snake)
+    (r/render-snake snake)
+    (r/render-snake-delta old-snake snake))
   (when goal (r/render-goal goal))
   (r/render-stats snake start-time)
   (when (config :debug?)
