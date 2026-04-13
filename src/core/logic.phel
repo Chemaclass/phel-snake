@@ -1,0 +1,92 @@
+(ns phel-snake\core\logic)
+
+(defstruct snake [direction score head tail])
+
+(def direction-vectors
+  {:left  {:dx -1 :dy 0}
+   :right {:dx 1  :dy 0}
+   :up    {:dx 0  :dy -1}
+   :down  {:dx 0  :dy 1}})
+
+(def key->direction
+  {:left :left :right :right :up :up :down :down})
+
+(def key-space-hex "20")
+
+(def- left-wall-x 1)
+(def- top-wall-y 0)
+
+(defn step-head
+  "Returns a new head position moved one cell in `direction`."
+  [head direction]
+  (let [{:dx dx :dy dy} (direction-vectors direction)]
+    {:x (+ (head :x) dx)
+     :y (+ (head :y) dy)}))
+
+(defn move-snake
+  "Advances the snake by one cell; preserves length. `next-direction` may be nil."
+  [s next-direction]
+  (let [direction (or next-direction (s :direction))
+        new-head (step-head (s :head) direction)
+        new-tail (push (into [] (drop 1 (s :tail))) (s :head))]
+    (-> s
+        (put :direction direction)
+        (put :head new-head)
+        (put :tail new-tail))))
+
+(defn grow-snake
+  "Advances the snake by one cell without shrinking the tail."
+  [s]
+  (let [new-head (step-head (s :head) (s :direction))]
+    (-> s
+        (put :head new-head)
+        (update :tail #(push % (s :head))))))
+
+(defn collision-with-board?
+  "True when the snake head has hit the playable-area boundary."
+  [board s]
+  (let [{:x x :y y} (s :head)]
+    (or (<= x left-wall-x)
+        (<= y top-wall-y)
+        (>= x (board :width))
+        (>= y (dec (board :height))))))
+
+(defn- inside-play-area?
+  [{:width w :height h} {:x x :y y}]
+  (and (> x left-wall-x)
+       (> y top-wall-y)
+       (< x (dec w))
+       (< y (dec h))))
+
+(defn- on-snake?
+  [s {:x x :y y}]
+  (or (and (= (get-in s [:head :x]) x)
+           (= (get-in s [:head :y]) y))
+      (some? (find #(and (= (% :x) x) (= (% :y) y)) (s :tail)))))
+
+(defn generate-new-goal
+  "Random cell inside the play area; avoids the snake body when `s` is given."
+  ([board] (generate-new-goal board nil))
+  ([board s]
+   (let [pos {:x (rand-int (board :width))
+              :y (rand-int (board :height))}]
+     (if (and (inside-play-area? board pos)
+              (not (and s (on-snake? s pos))))
+       pos
+       (recur board s)))))
+
+(defn generate-snake-head
+  "Random starting head position near the left side of the board."
+  [{:height h}]
+  (generate-new-goal {:width 5 :height h}))
+
+(defn snake-reach-goal? [s g]
+  (and (= (get-in s [:head :x]) (g :x))
+       (= (get-in s [:head :y]) (g :y))))
+
+(defn update-goal
+  "Returns a fresh goal if the snake reached `g`, else `g` unchanged."
+  [s g board]
+  (if (snake-reach-goal? s g)
+    (generate-new-goal board s)
+    g))

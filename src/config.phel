@@ -1,0 +1,18 @@
+(ns phel-snake\config
+  (:require [phel-snake\util :refer [get-int-arg]]))
+
+(defn parse-config
+  "Build the game config map from command-line args."
+  [args]
+  (let [simple? (contains-value? args "simple")
+        debug? (contains-value? args "debug")
+        god-mode? (contains-value? args "god-mode")]
+    {:mode (if simple? :simple :full)
+     :board {:width (get-int-arg args "width" (if simple? 40 42))
+             :height (get-int-arg args "height" (if simple? 20 22))}
+     :goals? (not simple?)
+     :grow? (not simple?)
+     :accelerate? (not simple?)
+     :variable-speed? (and (not simple?) (not god-mode?))
+     :debug? debug?
+     :god-mode? god-mode?}))

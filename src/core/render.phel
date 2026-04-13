@@ -1,0 +1,47 @@
+(ns phel-snake\core\render
+  (:require [phel-cli-gui\terminal-gui :as gui]))
+
+(def- border-style {:horizontal "---" :vertical "|" :corner "+"})
+
+(defn setup-styles []
+  (gui/add-output-formatter {:style-name "snake-head"
+                             :foreground "black" :background "red" :options ["bold"]})
+  (gui/add-output-formatter {:style-name "snake-tail"
+                             :foreground "black" :background "green" :options ["bold"]})
+  (gui/add-output-formatter {:style-name "goal"
+                             :foreground "black" :background "magenta" :options ["bold"]}))
+
+(defn render-board [board]
+  (gui/clear-screen)
+  (gui/render-board board border-style))
+
+(defn render-snake [s]
+  (for [t :in (s :tail)]
+    (gui/render (t :x) (t :y) " " "snake-tail"))
+  (let [h (s :head)]
+    (gui/render (h :x) (h :y) " " "snake-head")))
+
+(defn clear-snake [s]
+  (when-let [tail (s :tail)]
+    (for [t :in tail]
+      (gui/render (t :x) (t :y) " "))
+    (let [h (s :head)]
+      (gui/render (h :x) (h :y) " "))))
+
+(defn render-goal [goal]
+  (gui/render (goal :x) (goal :y) " " "goal"))
+
+(defn render-stats [s start-time]
+  (println (format "\nScore: %d" (s :score)))
+  (println (format "Length: %d" (inc (count (s :tail)))))
+  (println (format "Time: %d secs"
+                   (php/round (- (php/microtime true) start-time)))))
+
+(defn render-game-over [board s]
+  (let [text "GAME OVER"
+        x (php/intval (php/round (- (/ (board :width) 2)
+                                    (/ (php/strlen text) 2))))
+        y (php/intval (php/round (/ (board :height) 2)))]
+    (render-snake s)
+    (gui/render x y text)
+    (gui/render x (inc y) (format "Score: %d" (s :score)))))

@@ -1,0 +1,91 @@
+(ns phel-snake\game
+  (:require [phel-cli-gui\terminal-gui :as gui]
+            [phel-snake\core\logic :as l]
+            [phel-snake\core\render :as r]))
+
+(def- base-delay-us 140000)
+(def- difficulty-scale 10000)
+(def- accelerate-window 3)
+(def- simple-delay-us 50000)
+
+(defn- fixed-delay [config]
+  (if (= :simple (config :mode)) simple-delay-us base-delay-us))
+
+(defn- compute-delay [s config accelerate-steps]
+  (cond
+    (pos? accelerate-steps) 0
+    (config :variable-speed?)
+    (let [base (- base-delay-us (* (s :score) difficulty-scale))
+          horiz? (or (= :left (s :direction)) (= :right (s :direction)))]
+      (php/intval (/ (max base 0) (if horiz? 2 1))))
+    :else (fixed-delay config)))
+
+(defn- initial-snake [config]
+  (if (= :simple (config :mode))
+    (l/snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])
+    (l/snake :right 0 (l/generate-snake-head (config :board)) [])))
+
+(defn- initial-goal [config snake]
+  (when (config :goals?)
+    (l/generate-new-goal (config :board) snake)))
+
+(defn- tick
+  "Computes the next snake, goal, and accelerate counter for one tick."
+  [{:keys [snake goal config]} input accelerate-steps]
+  (let [next-direction (l/key->direction (gui/parse-key input))
+        accelerate? (and (config :accelerate?)
+                         (= (input :hex) l/key-space-hex))
+        updated-goal (if (config :goals?)
+                       (l/update-goal snake goal (config :board))
+                       goal)
+        new-goal? (and (config :goals?) (not= goal updated-goal))
+        moved (l/move-snake snake next-direction)
+        scored (if new-goal? (update moved :score inc) moved)
+        next-snake (if (and new-goal? (config :grow?)) (l/grow-snake scored) scored)]
+    {:snake next-snake
+     :goal updated-goal
+     :accelerate-steps (if accelerate?
+                         accelerate-window
+                         (max 0 (dec accelerate-steps)))}))
+
+(defn- render-frame [old-snake snake goal config start-time]
+  (r/clear-snake old-snake)
+  (r/render-snake snake)
+  (when goal (r/render-goal goal))
+  (r/render-stats snake start-time)
+  (when (config :debug?)
+    (println (format "; direction: %s  accelerate?: %s  god-mode?: %s"
+                     (snake :direction)
+                     (config :accelerate?)
+                     (config :god-mode?)))))
+
+(defn- finish [board snake start-time]
+  (r/render-game-over board snake)
+  (println)
+  (println)
+  (println (format "Final Score: %d points" (snake :score)))
+  (println (format "Total Time: %d secs"
+                   (php/round (- (php/microtime true) start-time))))
+  (println "Press any key to exit...")
+  (gui/read-input 1)
+  (php/exit))
+
+(defn run [config]
+  (r/setup-styles)
+  (r/render-board (config :board))
+  (let [start-time (php/microtime true)
+        board (config :board)
+        snake0 (initial-snake config)]
+    (loop [old-snake {}
+           snake snake0
+           goal (initial-goal config snake0)
+           accelerate-steps 0]
+      (render-frame old-snake snake goal config start-time)
+      (php/usleep (compute-delay snake config accelerate-steps))
+      (gui/clear-output)
+      (when (l/collision-with-board? board snake)
+        (finish board snake start-time))
+      (let [input (gui/read-input 3)
+            {:snake next-snake :goal next-goal :accelerate-steps next-accel}
+            (tick {:snake snake :goal goal :config config} input accelerate-steps)]
+        (recur snake next-snake next-goal next-accel)))))

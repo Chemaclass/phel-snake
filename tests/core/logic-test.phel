@@ -1,10 +1,17 @@
-(ns phel-snake-tests\full-version\logic-test
-  (:require phel-snake\full-version\logic :refer [snake
-                                                  snake-reach-goal?
-                                                  move-snake
-                                                  collision-with-board?
-                                                  grow-snake])
+(ns phel-snake-tests\core\logic-test
+  (:require phel-snake\core\logic :refer [snake
+                                          snake-reach-goal?
+                                          move-snake
+                                          collision-with-board?
+                                          grow-snake
+                                          step-head])
   (:require phel\test :refer [deftest is]))
+
+(deftest test-step-head
+  (is (= {:x 6 :y 5} (step-head {:x 5 :y 5} :right)))
+  (is (= {:x 4 :y 5} (step-head {:x 5 :y 5} :left)))
+  (is (= {:x 5 :y 4} (step-head {:x 5 :y 5} :up)))
+  (is (= {:x 5 :y 6} (step-head {:x 5 :y 5} :down))))
 
 (deftest test-snake-reach-goal?
   (let [goal {:x 2 :y 2}]
@@ -13,10 +20,10 @@
 
 (deftest test-collision-with-board?
   (let [board {:width 10 :height 10}]
-    (is (false? (collision-with-board? board  {:head {:x 5 :y 5}})))
+    (is (false? (collision-with-board? board {:head {:x 5 :y 5}})))
     (is (true?  (collision-with-board? board {:head {:x 5 :y 0}})) "collision on top")
-    (is (true?  (collision-with-board? board {:head {:x 5 :y 9}})) "collision on right")
-    (is (true?  (collision-with-board? board {:head {:x 10 :y 5}})) "collision on bottom")
+    (is (true?  (collision-with-board? board {:head {:x 5 :y 9}})) "collision on bottom")
+    (is (true?  (collision-with-board? board {:head {:x 10 :y 5}})) "collision on right")
     (is (true?  (collision-with-board? board {:head {:x 0 :y 5}})) "collision on left")))
 
 (deftest test-move-snake
