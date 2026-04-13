@@ -7,8 +7,8 @@
 ;; Try it out: vendor/bin/phel run src/simple-version/game.phel
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (ns phel-snake\simple-version\game
-  (:require phel-cli-gui\terminal-gui :as gui)
-  (:require phel-snake\util :refer [get-from-list]))
+  (:require [phel-cli-gui\terminal-gui :as gui]
+            [phel-snake\util :refer [get-from-list]]))
 
 (gui/add-output-formatter {:style-name "snake-head"
                            :foreground "black" :background "red" :options ["bold"]})
@@ -70,7 +70,7 @@
     (render-board)
     (println "Move your snake with the arrow-keys [UP, DOWN, LEFT, RIGHT]")
 
-    (if (collision-with-board? snake)
+    (when (collision-with-board? snake)
       (game-over snake))
 
     (let [{:hex in} (gui/read-input 3)

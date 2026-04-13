@@ -24,7 +24,7 @@
               :up (update-in snake [:head :y] dec)
               :down (update-in snake [:head :y] inc))]
     ;; add head to the tail
-    (update sn1 :tail |(push $ (snake :head)))))
+    (update sn1 :tail #(push % (snake :head)))))
 
 (defn move-snake [s next-direction]
   (if (nil? next-direction)

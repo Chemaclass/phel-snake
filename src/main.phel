@@ -1,7 +1,7 @@
 (ns phel-snake\main
-  (:require phel-snake\full-version\game :refer [full-game])
-  (:require phel-snake\simple-version\game :refer [simple-game])
-  (:require phel-snake\util :refer [get-from-list]))
+  (:require [phel-snake\full-version\game :refer [full-game]]
+            [phel-snake\simple-version\game :refer [simple-game]]
+            [phel-snake\util :refer [get-from-list]]))
 
 (when-not *build-mode*
   (if (get-from-list argv "simple" false)
