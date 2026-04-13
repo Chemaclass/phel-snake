@@ -1,11 +1,11 @@
-#########################################################################################
-# This is a full version of the snake-cli-game, with the following elements:
-# - A board
-# - A snake with constant speed inside the board
-# - The game ends when the snake touches the board
-#########################################################################################
-# Try it out: vendor/bin/phel run src/simple-version/game.phel
-#########################################################################################
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; This is a full version of the snake-cli-game, with the following elements:
+;; - A board
+;; - A snake with constant speed inside the board
+;; - The game ends when the snake touches the board
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Try it out: vendor/bin/phel run src/simple-version/game.phel
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (ns phel-snake\simple-version\game
   (:require phel-cli-gui\terminal-gui :as gui)
   (:require phel-snake\util :refer [get-from-list]))
@@ -22,7 +22,7 @@
 (def board-height (get-from-list argv "height" 20))
 (def board (board-struct board-width board-height))
 
-# Hexadecimal keys
+;; Hexadecimal keys
 (def directions
   {"1b5b44" :left
    "1b5b42" :down

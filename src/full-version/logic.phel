@@ -4,7 +4,7 @@
 (defstruct board-style [horizontal vertical corner])
 (defstruct snake [direction speed head tail])
 
-# Hexadecimal keys
+;; Hexadecimal keys
 (def key-space "20")
 (def- key-left-arrow "1b5b44")
 (def- key-down-arrow "1b5b42")
@@ -23,7 +23,7 @@
               :right (update-in snake [:head :x] inc)
               :up (update-in snake [:head :y] dec)
               :down (update-in snake [:head :y] inc))]
-    # add head to the tail
+    ;; add head to the tail
     (update sn1 :tail |(push $ (snake :head)))))
 
 (defn move-snake [s next-direction]

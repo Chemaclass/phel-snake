@@ -1,14 +1,14 @@
-#########################################################################################
-# This is a full version of the snake-cli-game, with the following elements:
-# - A snake that increases the speed for each apple/goal that it reaches
-# - A randomize apple/goal that appears after the snake eat it
-# - A custom key to increase the speed or to disable increasing the speed
-# - A custom parameter to disable increasing the speed
-# - A debug parameter to see the internal debug status of the game
-# - The game ends when the snake touches the board
-#########################################################################################
-# Try it out: vendor/bin/phel run src/full-version/game.phel
-#########################################################################################
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; This is a full version of the snake-cli-game, with the following elements:
+;; - A snake that increases the speed for each apple/goal that it reaches
+;; - A randomize apple/goal that appears after the snake eat it
+;; - A custom key to increase the speed or to disable increasing the speed
+;; - A custom parameter to disable increasing the speed
+;; - A debug parameter to see the internal debug status of the game
+;; - The game ends when the snake touches the board
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Try it out: vendor/bin/phel run src/full-version/game.phel
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (ns phel-snake\full-version\game
   (:use RuntimeException)
   (:require phel-cli-gui\terminal-gui :as gui)
