@@ -64,6 +64,12 @@
            (= (get-in s [:head :y]) y))
       (some? (find #(and (= (% :x) x) (= (% :y) y)) (s :tail)))))
 
+(defn self-collision?
+  "True when the snake head overlaps any cell of its own tail."
+  [s]
+  (let [{:x hx :y hy} (s :head)]
+    (some? (find #(and (= (% :x) hx) (= (% :y) hy)) (s :tail)))))
+
 (defn generate-new-goal
   "Random cell inside the play area; avoids the snake body when `s` is given."
   ([board] (generate-new-goal board nil))

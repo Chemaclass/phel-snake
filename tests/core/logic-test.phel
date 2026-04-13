@@ -3,6 +3,7 @@
                                           snake-reach-goal?
                                           move-snake
                                           collision-with-board?
+                                          self-collision?
                                           grow-snake
                                           step-head])
   (:require phel\test :refer [deftest is]))
@@ -54,3 +55,11 @@
 (deftest test-grow-snake-down
   (is (= (snake :down 1 {:x 5 :y 6} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
          (grow-snake (snake :down 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
+
+(deftest test-self-collision?
+  (is (false? (self-collision? (snake :right 0 {:x 5 :y 5} [])))
+      "no tail => no self collision")
+  (is (false? (self-collision? (snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])))
+      "head not on any tail cell")
+  (is (true? (self-collision? (snake :right 0 {:x 3 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])))
+      "head overlaps tail cell"))

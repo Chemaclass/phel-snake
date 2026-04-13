@@ -83,7 +83,8 @@
       (render-frame old-snake snake goal config start-time)
       (php/usleep (compute-delay snake config accelerate-steps))
       (gui/clear-output)
-      (when (l/collision-with-board? board snake)
+      (when (or (l/collision-with-board? board snake)
+                (l/self-collision? snake))
         (finish board snake start-time))
       (let [input (gui/read-input 3)
             {:snake next-snake :goal next-goal :accelerate-steps next-accel}
