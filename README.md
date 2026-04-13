@@ -34,7 +34,8 @@ Requires PHP `>=8.3` ([linux](https://github.com/phpbrew/phpbrew) | [Mac](https:
 - **Space**: Accelerate (full version)
 - **P**: Pause / resume
 
-Game ends when the snake hits the border.
+Game ends when the snake hits the border. Press **R** on the game-over
+screen to replay the exact run you just played (same seed, same inputs).
 
 ## Options
 

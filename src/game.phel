@@ -120,7 +120,10 @@
           (recur))))
     (gui/render x y "      ")))
 
-(defn- finish [board snake start-time]
+(defn- finish
+  "Renders the game-over screen, updates the persisted high score, and returns
+  :replay when the user presses 'r' (or 'R') at the prompt, :exit otherwise."
+  [board snake start-time replay-offered?]
   (r/render-game-over board snake)
   (let [{:previous prev :new-record? record?} (hs/update-if-higher (snake :score))]
     (println)
@@ -131,9 +134,13 @@
     (if record?
       (println (format "NEW HIGH SCORE! (previous: %d)" prev))
       (println (format "High Score: %d" prev))))
-  (println "Press any key to exit...")
-  (gui/read-input 1)
-  (php/exit))
+  (if replay-offered?
+    (do (println "Press R to replay, any other key to exit...")
+        (let [hex (get (gui/read-input 3) :hex "")]
+          (if (or (= hex "72") (= hex "52")) :replay :exit)))
+    (do (println "Press any key to exit...")
+        (gui/read-input 1)
+        :exit)))
 
 (defn- maybe-level-up
   "Spawns an extra wall segment when the score crosses the next threshold.
@@ -223,48 +230,83 @@
                           goal)]
           (recur s1 s2 s1-final s2-final next-goal))))))
 
-(defn- run-single-player [config]
-  (r/setup-styles)
-  (r/render-board (config :board))
-  (let [start-time (php/microtime true)
-        board (config :board)
-        snake0 (initial-snake config)
-        obstacles0 (initial-obstacles config snake0)]
-    (loop [old-snake {}
-           snake snake0
-           goal (initial-goal config snake0 obstacles0)
-           obstacles obstacles0
-           accelerate-steps 0
-           slow-ticks 0
-           combo {:count 0 :ticks-left 0 :multiplier 1}
-           level 1
-           initial? true]
-      (render-frame old-snake snake goal obstacles combo config start-time initial?)
-      (php/usleep (compute-delay snake config accelerate-steps slow-ticks))
-      (gui/clear-output)
-      (when (or (and (not (config :wrap?)) (l/collision-with-board? board snake))
+(defn- replay-input
+  "Returns {:input :remaining}. In replay mode, pops the next recorded hex
+  from `remaining`; in live mode, polls stdin. Recorded hex `\"\"` represents
+  a no-input tick."
+  [remaining replaying?]
+  (if replaying?
+    (let [hex (or (first remaining) "")
+          raw (if (= hex "") "" (php/hex2bin hex))]
+      {:input {:raw raw :hex hex} :remaining (or (rest remaining) [])})
+    {:input (gui/read-input 3) :remaining []}))
+
+(defn- play-once
+  "Runs one game session. Returns
+  {:snake :start-time :seed :inputs :board} so the caller can show the
+  game-over screen and offer a replay. When `replay` is given, plays back
+  the recorded run deterministically (no live input)."
+  [config replay]
+  (let [seed (if replay (replay :seed) (php/mt_rand 0 1000000))]
+    (php/mt_srand seed)
+    (r/setup-styles)
+    (r/render-board (config :board))
+    (let [start-time (php/microtime true)
+          board (config :board)
+          snake0 (initial-snake config)
+          obstacles0 (initial-obstacles config snake0)
+          replaying? (some? replay)]
+      (loop [old-snake {}
+             snake snake0
+             goal (initial-goal config snake0 obstacles0)
+             obstacles obstacles0
+             accelerate-steps 0
+             slow-ticks 0
+             combo {:count 0 :ticks-left 0 :multiplier 1}
+             level 1
+             initial? true
+             remaining (if replay (replay :inputs) [])
+             recorded []]
+        (render-frame old-snake snake goal obstacles combo config start-time initial?)
+        (php/usleep (compute-delay snake config accelerate-steps slow-ticks))
+        (gui/clear-output)
+        (if (or (and (not (config :wrap?)) (l/collision-with-board? board snake))
                 (l/self-collision? snake)
                 (l/obstacle-collision? obstacles snake))
-        (finish board snake start-time))
-      (let [input (gui/read-input 3)]
-        (when (= (input :hex) l/key-p-hex)
-          (wait-while-paused board)
-          (r/render-obstacles obstacles)
-          (when goal (r/render-goal goal))
-          (r/render-snake snake))
-        (let [{:snake next-snake
-               :goal next-goal
-               :accelerate-steps next-accel
-               :slow-ticks next-slow
-               :combo next-combo}
-              (tick {:snake snake :goal goal :config config
-                     :obstacles obstacles :slow-ticks slow-ticks :combo combo}
-                    input accelerate-steps)
-              [next-obs next-level new-walls]
-              (maybe-level-up config next-snake obstacles next-goal level)]
-          (when new-walls (r/render-obstacles new-walls))
-          (recur snake next-snake next-goal next-obs
-                 next-accel next-slow next-combo next-level false))))))
+          {:snake snake :start-time start-time :seed seed
+           :inputs recorded :board board}
+          (let [{:input input :remaining next-remaining}
+                (replay-input remaining replaying?)]
+            (when (and (not replaying?) (= (input :hex) l/key-p-hex))
+              (wait-while-paused board)
+              (r/render-obstacles obstacles)
+              (when goal (r/render-goal goal))
+              (r/render-snake snake))
+            (let [{:snake next-snake
+                   :goal next-goal
+                   :accelerate-steps next-accel
+                   :slow-ticks next-slow
+                   :combo next-combo}
+                  (tick {:snake snake :goal goal :config config
+                         :obstacles obstacles :slow-ticks slow-ticks :combo combo}
+                        input accelerate-steps)
+                  [next-obs next-level new-walls]
+                  (maybe-level-up config next-snake obstacles next-goal level)]
+              (when new-walls (r/render-obstacles new-walls))
+              (recur snake next-snake next-goal next-obs
+                     next-accel next-slow next-combo next-level false
+                     next-remaining (push recorded (input :hex))))))))))
+
+(defn- run-single-player [config]
+  (loop [replay nil]
+    (let [{:snake snake :start-time start-time :board board
+           :seed seed :inputs inputs}
+          (play-once config replay)
+          replaying? (some? replay)
+          outcome (finish board snake start-time (not replaying?))]
+      (case outcome
+        :replay (recur {:seed seed :inputs inputs})
+        (php/exit)))))
 
 (defn run [config]
   (if (config :two-player?)
