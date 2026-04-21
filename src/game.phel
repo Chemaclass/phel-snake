@@ -1,57 +1,18 @@
 (ns phel-snake\game
   (:require [phel-cli-gui\terminal-gui :as gui]
+            [phel-snake\core\input :refer [parse-input-events
+                                           pick-direction
+                                           p1-direction
+                                           p2-direction]]
             [phel-snake\core\logic :as l]
             [phel-snake\core\render :as r]
+            [phel-snake\core\speed :refer [compute-delay fixed-delay accelerate-window]]
             [phel-snake\highscore :as hs]))
-
-(def- base-delay-us 140000)
-(def- difficulty-scale 10000)
-(def- accelerate-window 3)
-(def- simple-delay-us 50000)
-
-(defn- fixed-delay [config]
-  (if (= :simple (config :mode)) simple-delay-us base-delay-us))
-
-(defn- compute-delay [s config accelerate-steps slow-ticks]
-  (let [base (cond
-               (pos? accelerate-steps) 0
-               (config :variable-speed?)
-               (let [b (- base-delay-us (* (s :score) difficulty-scale))
-                     horiz? (or (= :left (s :direction)) (= :right (s :direction)))]
-                 (php/intval (/ (max b 0) (if horiz? 2 1))))
-               :else (fixed-delay config))]
-    (if (pos? slow-ticks) (* base 2) base)))
 
 (defn- initial-snake [config]
   (if (= :simple (config :mode))
     (l/snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])
     (l/snake :right 0 (l/generate-snake-head (config :board)) [])))
-
-(defn- parse-input-events
-  "Break a raw input buffer into key events. Arrow keys are 3-byte CSI
-  sequences starting with ESC [ (hex 1b5b); other keys are single bytes.
-  Used to capture both players' simultaneous keystrokes in a single poll."
-  [raw]
-  (loop [buf (or raw "") events []]
-    (if (= "" buf)
-      events
-      (let [esc? (and (>= (php/strlen buf) 3)
-                      (= "1b5b" (php/bin2hex (php/substr buf 0 2))))
-            take (if esc? 3 1)
-            chunk (php/substr buf 0 take)
-            event {:raw chunk :hex (php/bin2hex chunk)}]
-        (recur (php/substr buf take) (push events event))))))
-
-(defn- pick-direction
-  "Scans events and returns the last direction the player selected (or nil)."
-  [events key-fn]
-  (reduce (fn [acc evt] (or (key-fn evt) acc)) nil events))
-
-(defn- p1-direction [evt]
-  (l/key->direction (gui/parse-key evt)))
-
-(defn- p2-direction [evt]
-  (get l/wasd->direction (evt :raw)))
 
 (defn- initial-goal [config snake obstacles]
   (when (config :goals?)
@@ -154,9 +115,6 @@
         [(into obstacles walls) (inc level) walls]))
     [obstacles level nil]))
 
-(defn- opponent-collision? [me other]
-  (l/on-any-cell? (push (other :tail) (other :head)) (me :head)))
-
 (defn- finish-two [board s1 s2 start-time outcome]
   (r/render-snake s1 "snake-head" "snake-tail")
   (r/render-snake s2 "snake2-head" "snake2-tail")
@@ -177,58 +135,71 @@
   (gui/read-input 1)
   (php/exit))
 
+(defn- two-dead-outcome [p1-dead? p2-dead?]
+  (cond
+    (and p1-dead? p2-dead?) :draw
+    p1-dead? :p2
+    :else :p1))
+
+(defn- two-dead? [board wrap? me other]
+  (or (and (not wrap?) (l/collision-with-board? board me))
+      (l/self-collision? me)
+      (l/opponent-collision? me other)))
+
+(defn- advance-two
+  "Pure step: returns {:s1 :s2 :goal} after applying directions d1/d2."
+  [board wrap? s1 s2 goal d1 d2]
+  (let [s1-moved (l/move-snake s1 d1)
+        s2-moved (l/move-snake s2 d2)
+        g1? (l/snake-reach-goal? s1-moved goal)
+        g2? (and (not g1?) (l/snake-reach-goal? s2-moved goal))
+        s1-next (if g1? (l/grow-snake (update s1-moved :score inc)) s1-moved)
+        s2-next (if g2? (l/grow-snake (update s2-moved :score inc)) s2-moved)
+        wrap (fn [s] (if wrap? (l/wrap-head board s) s))
+        s1-final (wrap s1-next)
+        s2-final (wrap s2-next)
+        next-goal (if (or g1? g2?)
+                    (l/generate-new-goal board s1-final nil false)
+                    goal)]
+    {:s1 s1-final :s2 s2-final :goal next-goal}))
+
+(defn- render-two [old-s1 old-s2 s1 s2 goal start-time]
+  (if (empty? old-s1)
+    (r/render-snake s1 "snake-head" "snake-tail")
+    (r/render-snake-delta old-s1 s1 "snake-head" "snake-tail"))
+  (if (empty? old-s2)
+    (r/render-snake s2 "snake2-head" "snake2-tail")
+    (r/render-snake-delta old-s2 s2 "snake2-head" "snake2-tail"))
+  (when goal (r/render-goal goal))
+  (println (format "\nP1: %d  |  P2: %d" (s1 :score) (s2 :score)))
+  (println (format "Time: %d secs"
+                   (php/round (- (php/microtime true) start-time)))))
+
 (defn- run-two-player [config]
   (r/setup-styles)
   (r/render-board (config :board))
   (let [start-time (php/microtime true)
         board (config :board)
-        board-mid-y (php/intval (/ (board :height) 2))
-        s1-0 (l/snake :right 0 {:x 5 :y board-mid-y} [])
-        s2-0 (l/snake :left 0 {:x (- (board :width) 5) :y board-mid-y} [])
+        wrap? (config :wrap?)
+        delay-us (max 80000 (fixed-delay config))
+        mid-y (php/intval (/ (board :height) 2))
+        s1-0 (l/snake :right 0 {:x 5 :y mid-y} [])
+        s2-0 (l/snake :left 0 {:x (- (board :width) 5) :y mid-y} [])
         goal0 (l/generate-new-goal board s1-0 nil false)]
     (loop [old-s1 {} old-s2 {} s1 s1-0 s2 s2-0 goal goal0]
-      (when (empty? old-s1) (r/render-snake s1 "snake-head" "snake-tail"))
-      (when (empty? old-s2) (r/render-snake s2 "snake2-head" "snake2-tail"))
-      (when (not (empty? old-s1)) (r/render-snake-delta old-s1 s1 "snake-head" "snake-tail"))
-      (when (not (empty? old-s2)) (r/render-snake-delta old-s2 s2 "snake2-head" "snake2-tail"))
-      (when goal (r/render-goal goal))
-      (println (format "\nP1: %d  |  P2: %d" (s1 :score) (s2 :score)))
-      (println (format "Time: %d secs"
-                       (php/round (- (php/microtime true) start-time))))
-      (php/usleep (max 80000 (fixed-delay config)))
+      (render-two old-s1 old-s2 s1 s2 goal start-time)
+      (php/usleep delay-us)
       (gui/clear-output)
-      (let [p1-wall? (and (not (config :wrap?)) (l/collision-with-board? board s1))
-            p2-wall? (and (not (config :wrap?)) (l/collision-with-board? board s2))
-            p1-self? (l/self-collision? s1)
-            p2-self? (l/self-collision? s2)
-            p1-into-p2? (opponent-collision? s1 s2)
-            p2-into-p1? (opponent-collision? s2 s1)
-            p1-dead? (or p1-wall? p1-self? p1-into-p2?)
-            p2-dead? (or p2-wall? p2-self? p2-into-p1?)]
+      (let [p1-dead? (two-dead? board wrap? s1 s2)
+            p2-dead? (two-dead? board wrap? s2 s1)]
         (when (or p1-dead? p2-dead?)
-          (finish-two board s1 s2 start-time
-                      (cond
-                        (and p1-dead? p2-dead?) :draw
-                        p1-dead? :p2
-                        :else :p1)))
-        (let [raw (get (gui/read-input 8) :raw)
-              events (parse-input-events raw)
+          (finish-two board s1 s2 start-time (two-dead-outcome p1-dead? p2-dead?)))
+        (let [events (parse-input-events (get (gui/read-input 8) :raw))
               d1 (pick-direction events p1-direction)
               d2 (pick-direction events p2-direction)
-              g1? (l/snake-reach-goal? (l/move-snake s1 d1) goal)
-              g2? (l/snake-reach-goal? (l/move-snake s2 d2) goal)
-              s1-moved (l/move-snake s1 d1)
-              s2-moved (l/move-snake s2 d2)
-              s1-scored (if g1? (update s1-moved :score inc) s1-moved)
-              s2-scored (if (and g2? (not g1?)) (update s2-moved :score inc) s2-moved)
-              s1-grown (if g1? (l/grow-snake s1-scored) s1-scored)
-              s2-grown (if (and g2? (not g1?)) (l/grow-snake s2-scored) s2-scored)
-              s1-final (if (config :wrap?) (l/wrap-head board s1-grown) s1-grown)
-              s2-final (if (config :wrap?) (l/wrap-head board s2-grown) s2-grown)
-              next-goal (if (or g1? g2?)
-                          (l/generate-new-goal board s1-final nil false)
-                          goal)]
-          (recur s1 s2 s1-final s2-final next-goal))))))
+              {:s1 s1-next :s2 s2-next :goal goal-next}
+              (advance-two board wrap? s1 s2 goal d1 d2)]
+          (recur s1 s2 s1-next s2-next goal-next))))))
 
 (defn- replay-input
   "Returns {:input :remaining}. In replay mode, pops the next recorded hex

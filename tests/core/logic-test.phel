@@ -7,7 +7,11 @@
                                           wrap-head
                                           grow-snake
                                           advance-combo
-                                          step-head])
+                                          step-head
+                                          goal-bonus
+                                          obstacle-collision?
+                                          opponent-collision?
+                                          on-any-cell?])
   (:require phel\test :refer [deftest is]))
 
 (deftest test-step-head
@@ -95,3 +99,58 @@
     (is (= {:x 5 :y 8}
            ((wrap-head board (snake :up 0 {:x 5 :y 0} [])) :head))
         "crossed top wall => wraps to bottom")))
+
+(deftest test-goal-bonus-normal
+  (let [b (goal-bonus :normal)]
+    (is (= 1 (b :score-delta)))
+    (is (true? (b :grow?)))
+    (is (= 0 (b :slow-ticks)))))
+
+(deftest test-goal-bonus-golden
+  (let [b (goal-bonus :golden)]
+    (is (= 5 (b :score-delta)) "golden worth 5 points")
+    (is (true? (b :grow?)))
+    (is (= 0 (b :slow-ticks)))))
+
+(deftest test-goal-bonus-slow
+  (let [b (goal-bonus :slow)]
+    (is (= 2 (b :score-delta)))
+    (is (true? (b :grow?)))
+    (is (pos? (b :slow-ticks)) "slow power-up applies slow-ticks")))
+
+(deftest test-goal-bonus-unknown-fallback
+  (is (= (goal-bonus :normal) (goal-bonus :anything-else))
+      "unknown goal type falls back to :normal bonus"))
+
+(deftest test-obstacle-collision?
+  (let [s (snake :right 0 {:x 3 :y 3} [])]
+    (is (false? (obstacle-collision? [] s)) "no obstacles => no collision")
+    (is (false? (obstacle-collision? [{:x 4 :y 4}] s)) "miss")
+    (is (true?  (obstacle-collision? [{:x 3 :y 3}] s)) "hit")))
+
+(deftest test-opponent-collision?
+  (let [s1 (snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])
+        s2-head (snake :left 0 {:x 5 :y 5} [])
+        s2-tail (snake :left 0 {:x 4 :y 5} [])
+        s2-miss (snake :left 0 {:x 9 :y 9} [])]
+    (is (true?  (opponent-collision? s2-head s1)) "head-on-head collision")
+    (is (true?  (opponent-collision? s2-tail s1)) "stepping on opponent tail")
+    (is (false? (opponent-collision? s2-miss s1)) "unrelated cell => no collision")))
+
+(deftest test-on-any-cell?
+  (is (false? (on-any-cell? [] {:x 1 :y 1})) "empty cells => miss")
+  (is (true?  (on-any-cell? [{:x 1 :y 1}] {:x 1 :y 1})) "match")
+  (is (false? (on-any-cell? [{:x 1 :y 1}] {:x 2 :y 1})) "miss"))
+
+(deftest test-advance-combo-expires
+  (let [start (advance-combo {:count 0 :ticks-left 0} true)
+        eventually-expired
+        (loop [c start n 40]
+          (if (zero? n) c (recur (advance-combo c false) (dec n))))]
+    (is (= 0 (eventually-expired :count)) "combo count resets after window closes")
+    (is (= 0 (eventually-expired :ticks-left)) "ticks-left clamped to zero")))
+
+(deftest test-advance-combo-multiplier-cap
+  (let [eaten-many (loop [c {:count 0 :ticks-left 0} n 20]
+                     (if (zero? n) c (recur (advance-combo c true) (dec n))))]
+    (is (= 5 (eaten-many :multiplier)) "multiplier capped at combo-multiplier-cap (5)")))

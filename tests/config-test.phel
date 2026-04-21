@@ -1,0 +1,54 @@
+(ns phel-snake-tests\config-test
+  (:require phel-snake\config :refer [parse-config])
+  (:require phel\test :refer [deftest is]))
+
+(deftest test-parse-config-defaults-full
+  (let [c (parse-config [])]
+    (is (= :full (c :mode)))
+    (is (= 42 (get-in c [:board :width])))
+    (is (= 22 (get-in c [:board :height])))
+    (is (true?  (c :goals?)))
+    (is (true?  (c :grow?)))
+    (is (true?  (c :accelerate?)))
+    (is (true?  (c :variable-speed?)))
+    (is (false? (c :wrap?)))
+    (is (false? (c :debug?)))
+    (is (false? (c :god-mode?)))
+    (is (false? (c :two-player?)))
+    (is (true?  (c :power-ups?)))
+    (is (true?  (c :levels?)))
+    (is (= 5 (c :level-every)))
+    (is (= 0 (c :obstacle-count)) "no obstacles unless requested")))
+
+(deftest test-parse-config-simple-mode
+  (let [c (parse-config ["simple"])]
+    (is (= :simple (c :mode)))
+    (is (= 40 (get-in c [:board :width])))
+    (is (= 20 (get-in c [:board :height])))
+    (is (false? (c :goals?)))
+    (is (false? (c :grow?)))
+    (is (false? (c :accelerate?)))
+    (is (false? (c :variable-speed?)))
+    (is (false? (c :power-ups?)))
+    (is (false? (c :levels?)))))
+
+(deftest test-parse-config-overrides
+  (let [c (parse-config ["width=80" "height=30" "obstacles=7" "level-every=3"])]
+    (is (= 80 (get-in c [:board :width])))
+    (is (= 30 (get-in c [:board :height])))
+    (is (= 7 (c :obstacle-count)))
+    (is (= 3 (c :level-every)))))
+
+(deftest test-parse-config-obstacles-flag-no-value
+  (let [c (parse-config ["obstacles"])]
+    (is (= 10 (c :obstacle-count)) "bare `obstacles` flag picks default count")))
+
+(deftest test-parse-config-flags
+  (let [c (parse-config ["debug" "god-mode" "wrap" "no-power-ups" "no-levels" "two-player"])]
+    (is (true?  (c :debug?)))
+    (is (true?  (c :god-mode?)))
+    (is (false? (c :variable-speed?)) "god-mode disables variable-speed")
+    (is (true?  (c :wrap?)))
+    (is (false? (c :power-ups?)))
+    (is (false? (c :levels?)))
+    (is (true?  (c :two-player?)))))

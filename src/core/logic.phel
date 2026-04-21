@@ -156,8 +156,8 @@
   ([board s obstacles] (generate-new-goal board s obstacles false))
   ([board s obstacles power-ups?]
    (let [occ (cond-> (if s (occupied-set s) {})
-               (and obstacles (not (empty? obstacles)))
-               (merge (cells-set obstacles)))
+                     (and obstacles (not (empty? obstacles)))
+                     (merge (cells-set obstacles)))
          pos (random-free-pos board occ)]
      (when pos
        (merge pos {:type (if power-ups? (random-goal-type) :normal)})))))
@@ -208,8 +208,8 @@
   an empty vector if no suitable location is found."
   [board s obstacles goal len]
   (let [blocked (cond-> (occupied-set s)
-                  (and obstacles (not (empty? obstacles))) (merge (cells-set obstacles))
-                  goal (put (cell-key goal) true))
+                        (and obstacles (not (empty? obstacles))) (merge (cells-set obstacles))
+                        goal (put (cell-key goal) true))
         dirs [{:dx 1 :dy 0} {:dx -1 :dy 0} {:dx 0 :dy 1} {:dx 0 :dy -1}]]
     (loop [attempts 0]
       (if (>= attempts 30)
@@ -221,7 +221,7 @@
                                {:x (+ (start :x) (* i (dir :dx)))
                                 :y (+ (start :y) (* i (dir :dy)))}))
               all-free? (every? #(and (inside-play-area? board %)
-                                      (not (contains? blocked (cell-key %))))
+                                  (not (contains? blocked (cell-key %))))
                                 cells)]
           (if all-free? cells (recur (inc attempts))))))))
 
@@ -229,6 +229,11 @@
   "True when the snake head is on an obstacle cell."
   [obstacles s]
   (on-any-cell? obstacles (s :head)))
+
+(defn opponent-collision?
+  "True when `me`'s head is on any cell of `other` (head or tail)."
+  [me other]
+  (on-any-cell? (push (other :tail) (other :head)) (me :head)))
 
 (def combo-window-ticks 30)
 (def combo-multiplier-cap 5)

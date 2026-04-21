@@ -1,0 +1,40 @@
+(ns phel-snake-tests\core\input-test
+  (:require phel-snake\core\input :refer [parse-input-events pick-direction])
+  (:require phel\test :refer [deftest is]))
+
+(deftest test-parse-input-events-empty
+  (is (= [] (parse-input-events "")) "empty buffer => no events")
+  (is (= [] (parse-input-events nil)) "nil buffer => no events"))
+
+(deftest test-parse-input-events-single
+  (let [events (parse-input-events "w")]
+    (is (= 1 (count events)))
+    (is (= "w" (get (first events) :raw)))
+    (is (= "77" (get (first events) :hex)))))
+
+(deftest test-parse-input-events-arrow
+  (let [arrow (php/hex2bin "1b5b41")
+        events (parse-input-events arrow)]
+    (is (= 1 (count events)) "3-byte CSI sequence is one event")
+    (is (= "1b5b41" (get (first events) :hex)))))
+
+(deftest test-parse-input-events-mixed
+  (let [buf (str "w" (php/hex2bin "1b5b43") "s")
+        events (parse-input-events buf)]
+    (is (= 3 (count events)))
+    (is (= "77" (get (get events 0) :hex)))
+    (is (= "1b5b43" (get (get events 1) :hex)))
+    (is (= "73" (get (get events 2) :hex)))))
+
+(deftest test-pick-direction-empty
+  (is (nil? (pick-direction [] (fn [_] :up))) "no events => nil"))
+
+(deftest test-pick-direction-last-wins
+  (let [events [{:raw "w"} {:raw "s"} {:raw "a"}]
+        key-fn (fn [e] (get {"w" :up "s" :down "a" :left "d" :right} (e :raw)))]
+    (is (= :left (pick-direction events key-fn)) "last matching direction wins")))
+
+(deftest test-pick-direction-skips-nil
+  (let [events [{:raw "w"} {:raw "x"} {:raw "?"}]
+        key-fn (fn [e] (get {"w" :up} (e :raw)))]
+    (is (= :up (pick-direction events key-fn)) "nil events don't overwrite the accumulator")))

@@ -1,0 +1,45 @@
+(ns phel-snake-tests\core\speed-test
+  (:require phel-snake\core\speed :refer [compute-delay fixed-delay
+                                          base-delay-us simple-delay-us
+                                          difficulty-scale])
+  (:require phel\test :refer [deftest is]))
+
+(def- simple-cfg {:mode :simple})
+(def- full-cfg {:mode :full :variable-speed? true})
+(def- fixed-cfg {:mode :full :variable-speed? false})
+
+(defn- snake [dir score] {:direction dir :score score})
+
+(deftest test-fixed-delay
+  (is (= simple-delay-us (fixed-delay simple-cfg)) "simple mode uses simple delay")
+  (is (= base-delay-us (fixed-delay full-cfg)) "full mode uses base delay"))
+
+(deftest test-compute-delay-accelerate-wins
+  (is (= 0 (compute-delay (snake :right 0) full-cfg 3 0))
+      "positive accelerate-steps forces zero delay")
+  (is (= 0 (compute-delay (snake :right 0) full-cfg 3 5))
+      "accelerate overrides slow-ticks"))
+
+(deftest test-compute-delay-fixed-mode
+  (is (= base-delay-us (compute-delay (snake :right 0) fixed-cfg 0 0))
+      "non-variable full mode = base delay"))
+
+(deftest test-compute-delay-horizontal-halves
+  (let [vert (compute-delay (snake :up 0) full-cfg 0 0)
+        horiz (compute-delay (snake :right 0) full-cfg 0 0)]
+    (is (= base-delay-us vert) "vertical uses full base")
+    (is (= (php/intval (/ base-delay-us 2)) horiz) "horizontal halves delay")))
+
+(deftest test-compute-delay-score-scales
+  (let [d0 (compute-delay (snake :up 0) full-cfg 0 0)
+        d5 (compute-delay (snake :up 5) full-cfg 0 0)]
+    (is (= (- d0 (* 5 difficulty-scale)) d5) "each score point shaves difficulty-scale")))
+
+(deftest test-compute-delay-slow-doubles
+  (let [normal (compute-delay (snake :up 0) full-cfg 0 0)
+        slowed (compute-delay (snake :up 0) full-cfg 0 10)]
+    (is (= (* 2 normal) slowed) "slow-ticks doubles the base delay")))
+
+(deftest test-compute-delay-score-clamped
+  (let [huge (compute-delay (snake :up 1000) full-cfg 0 0)]
+    (is (>= huge 0) "delay never negative regardless of score")))

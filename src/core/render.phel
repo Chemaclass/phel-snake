@@ -35,10 +35,10 @@
 
 (defn clear-snake [s]
   (when-let [tail (s :tail)]
-    (for [t :in tail]
-      (gui/render (t :x) (t :y) " "))
-    (let [h (s :head)]
-      (gui/render (h :x) (h :y) " "))))
+            (for [t :in tail]
+              (gui/render (t :x) (t :y) " "))
+            (let [h (s :head)]
+              (gui/render (h :x) (h :y) " "))))
 
 (defn- same-cell? [a b]
   (and (= (a :x) (b :x)) (= (a :y) (b :y))))

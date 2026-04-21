@@ -1,0 +1,28 @@
+(ns phel-snake\core\input
+  (:require [phel-cli-gui\terminal-gui :as gui]
+            [phel-snake\core\logic :as l]))
+
+(defn parse-input-events
+  "Break a raw input buffer into key events. Arrow keys are 3-byte CSI
+  sequences starting with ESC [ (hex 1b5b); other keys are single bytes."
+  [raw]
+  (loop [buf (or raw "") events []]
+    (if (= "" buf)
+      events
+      (let [esc? (and (>= (php/strlen buf) 3)
+                      (= "1b5b" (php/bin2hex (php/substr buf 0 2))))
+            take (if esc? 3 1)
+            chunk (php/substr buf 0 take)]
+        (recur (php/substr buf take)
+               (push events {:raw chunk :hex (php/bin2hex chunk)}))))))
+
+(defn pick-direction
+  "Return the last direction produced by `key-fn` over `events`, or nil."
+  [events key-fn]
+  (reduce (fn [acc evt] (or (key-fn evt) acc)) nil events))
+
+(defn p1-direction [evt]
+  (l/key->direction (gui/parse-key evt)))
+
+(defn p2-direction [evt]
+  (get l/wasd->direction (evt :raw)))
