@@ -10,7 +10,7 @@
     (if (= "" buf)
       events
       (let [esc?  (and (>= (php/strlen buf) 3)
-                      (= "1b5b" (php/bin2hex (php/substr buf 0 2))))
+                       (= "1b5b" (php/bin2hex (php/substr buf 0 2))))
             take  (if esc? 3 1)
             chunk (php/substr buf 0 take)]
         (recur (php/substr buf take)

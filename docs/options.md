@@ -17,7 +17,6 @@ vendor/bin/phel run src/main.phel [options]
 
 | Option | Description |
 |--------|-------------|
-| `simple` | Play the [simple version](modes.md#simple) (no goals/growth/speed-up) |
 | `two-player` | [Two snakes](modes.md#two-player) share the board (arrows vs WASD) |
 
 ## Gameplay

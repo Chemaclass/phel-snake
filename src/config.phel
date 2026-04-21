@@ -1,32 +1,32 @@
 (ns phel-snake\config
   (:require [phel-snake\util :refer [get-int-arg]]))
 
-(defn- obstacle-count [args simple?]
+(def- default-width 42)
+(def- default-height 22)
+(def- default-obstacle-count 10)
+(def- default-level-every 5)
+
+(defn- flag? [args name] (contains-value? args name))
+
+(defn- obstacle-count [args]
   (let [explicit (get-int-arg args "obstacles" -1)]
     (cond
-      (>= explicit 0)                    explicit
-      (contains-value? args "obstacles") 10
-      :else                              0)))
+      (nat-int? explicit)      explicit
+      (flag? args "obstacles") default-obstacle-count
+      :else                    0)))
 
 (defn parse-config
   "Build the game config map from command-line args."
   [args]
-  (let [simple?   (contains-value? args "simple")
-        debug?    (contains-value? args "debug")
-        god-mode? (contains-value? args "god-mode")
-        wrap?     (contains-value? args "wrap")]
-    {:mode (if simple? :simple :full)
-     :board {:width (get-int-arg args "width" (if simple? 40 42))
-             :height (get-int-arg args "height" (if simple? 20 22))}
-     :goals? (not simple?)
-     :grow? (not simple?)
-     :accelerate? (not simple?)
-     :variable-speed? (and (not simple?) (not god-mode?))
-     :debug? debug?
-     :god-mode? god-mode?
-     :wrap? wrap?
-     :obstacle-count (obstacle-count args simple?)
-     :power-ups? (and (not simple?) (not (contains-value? args "no-power-ups")))
-     :levels? (and (not simple?) (not (contains-value? args "no-levels")))
-     :level-every (get-int-arg args "level-every" 5)
-     :two-player? (contains-value? args "two-player")}))
+  (let [god-mode? (flag? args "god-mode")]
+    {:board           {:width  (get-int-arg args "width" default-width)
+                       :height (get-int-arg args "height" default-height)}
+     :god-mode?       god-mode?
+     :variable-speed? (not god-mode?)
+     :wrap?           (flag? args "wrap")
+     :debug?          (flag? args "debug")
+     :two-player?     (flag? args "two-player")
+     :obstacle-count  (obstacle-count args)
+     :power-ups?      (not (flag? args "no-power-ups"))
+     :levels?         (not (flag? args "no-levels"))
+     :level-every     (get-int-arg args "level-every" default-level-every)}))

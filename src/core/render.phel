@@ -3,67 +3,54 @@
 
 (def- border-style {:horizontal "---" :vertical "|" :corner "+"})
 
+(def- bold-black {:foreground "black" :options ["bold"]})
+(def- bold-white {:foreground "white" :options ["bold"]})
+
+(def- styles
+  [["snake-head"  "red"     bold-black]
+   ["snake-tail"  "green"   bold-black]
+   ["snake2-head" "magenta" bold-black]
+   ["snake2-tail" "cyan"    bold-black]
+   ["goal"        "magenta" bold-black]
+   ["goal-golden" "yellow"  bold-black]
+   ["goal-slow"   "cyan"    bold-black]
+   ["obstacle"    "blue"    bold-white]])
+
 (defn setup-styles []
-  (gui/add-output-formatter {:style-name "snake-head"
-                             :foreground "black" :background "red" :options ["bold"]})
-  (gui/add-output-formatter {:style-name "snake-tail"
-                             :foreground "black" :background "green" :options ["bold"]})
-  (gui/add-output-formatter {:style-name "snake2-head"
-                             :foreground "black" :background "magenta" :options ["bold"]})
-  (gui/add-output-formatter {:style-name "snake2-tail"
-                             :foreground "black" :background "cyan" :options ["bold"]})
-  (gui/add-output-formatter {:style-name "goal"
-                             :foreground "black" :background "magenta" :options ["bold"]})
-  (gui/add-output-formatter {:style-name "goal-golden"
-                             :foreground "black" :background "yellow" :options ["bold"]})
-  (gui/add-output-formatter {:style-name "goal-slow"
-                             :foreground "black" :background "cyan" :options ["bold"]})
-  (gui/add-output-formatter {:style-name "obstacle"
-                             :foreground "white" :background "blue" :options ["bold"]}))
+  (for [[name bg base] :in styles]
+    (gui/add-output-formatter (merge base {:style-name name :background bg}))))
 
 (defn render-board [board]
   (gui/clear-screen)
   (gui/render-board board border-style))
 
+(defn- paint [{:x x :y y} char style]
+  (gui/render x y char style))
+
 (defn render-snake
   ([s] (render-snake s "snake-head" "snake-tail"))
   ([s head-style tail-style]
    (for [t :in (s :tail)]
-     (gui/render (t :x) (t :y) " " tail-style))
-   (let [h (s :head)]
-     (gui/render (h :x) (h :y) " " head-style))))
+     (paint t " " tail-style))
+   (paint (s :head) " " head-style)))
 
-(defn clear-snake [s]
-  (when-let [tail (s :tail)]
-    (for [t :in tail]
-      (gui/render (t :x) (t :y) " "))
-    (let [h (s :head)]
-      (gui/render (h :x) (h :y) " "))))
-
-(defn- same-cell? [a b]
-  (and (= (a :x) (b :x)) (= (a :y) (b :y))))
-
-(defn- in-tail? [tail cell]
-  (some? (find #(same-cell? % cell) tail)))
+(defn- same-cell? [{:x ax :y ay} {:x bx :y by}]
+  (and (= ax bx) (= ay by)))
 
 (defn render-snake-delta
-  "Incrementally updates the drawn snake: clears the dropped tail tip, repaints
-  the previous head as tail, and draws the new head. O(1) per frame instead of
-  O(length), matching the snake's actual motion."
-  ([old-snake new-snake] (render-snake-delta old-snake new-snake "snake-head" "snake-tail"))
-  ([old-snake new-snake head-style tail-style]
-   (let [old-tail (get old-snake :tail)
-         old-head (get old-snake :head)
-         new-tail (new-snake :tail)
-         new-head (new-snake :head)]
-     (when (and old-tail (not (empty? old-tail)))
-       (let [dropped (first old-tail)]
-         (when-not (or (same-cell? dropped new-head)
-                       (in-tail? new-tail dropped))
-           (gui/render (dropped :x) (dropped :y) " "))))
+  "Clears the dropped tail tip, repaints the old head as tail, draws the new
+  head. O(1) per frame instead of O(length)."
+  ([old new] (render-snake-delta old new "snake-head" "snake-tail"))
+  ([old new head-style tail-style]
+   (let [old-tail (old :tail)
+         old-head (old :head)
+         new-head (new :head)]
+     (when-first [dropped old-tail]
+                 (when-not (same-cell? dropped new-head)
+                   (gui/render (dropped :x) (dropped :y) " ")))
      (when old-head
-       (gui/render (old-head :x) (old-head :y) " " tail-style))
-     (gui/render (new-head :x) (new-head :y) " " head-style))))
+       (paint old-head " " tail-style))
+     (paint new-head " " head-style))))
 
 (defn- goal-style [goal]
   (case (get goal :type :normal)
@@ -78,11 +65,11 @@
     " "))
 
 (defn render-goal [goal]
-  (gui/render (goal :x) (goal :y) (goal-char goal) (goal-style goal)))
+  (paint goal (goal-char goal) (goal-style goal)))
 
 (defn render-obstacles [obstacles]
   (for [o :in (or obstacles [])]
-    (gui/render (o :x) (o :y) " " "obstacle")))
+    (paint o " " "obstacle")))
 
 (defn render-stats [s start-time]
   (println (format "\nScore: %d" (s :score)))
@@ -93,7 +80,7 @@
 (defn render-game-over [board s]
   (let [text "GAME OVER"
         x    (int (php/round (- (/ (board :width) 2)
-                             (/ (php/strlen text) 2))))
+                                (/ (php/strlen text) 2))))
         y    (int (php/round (/ (board :height) 2)))]
     (render-snake s)
     (gui/render x y text)

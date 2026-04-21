@@ -1,24 +1,24 @@
 (ns phel-snake\core\speed)
 
 (def base-delay-us 140000)
-(def simple-delay-us 50000)
 (def difficulty-scale 10000)
 (def accelerate-window 3)
+(def two-player-min-delay-us 80000)
 
-(defn fixed-delay [config]
-  (if (= :simple (config :mode)) simple-delay-us base-delay-us))
+(defn- horizontal? [dir]
+  (or (= :left dir) (= :right dir)))
+
+(defn- variable-delay [score dir]
+  (let [floor (max 0 (- base-delay-us (* score difficulty-scale)))]
+    (int (/ floor (if (horizontal? dir) 2 1)))))
 
 (defn compute-delay
   "Microseconds to sleep between frames. Scales with score in variable-speed
   mode, halves horizontally, zeros during an accelerate burst, doubles when
   a :slow power-up is active."
-  [snake config accelerate-steps slow-ticks]
-  (let [dir  (snake :direction)
-        base (cond
-               (pos? accelerate-steps)   0
-               (config :variable-speed?)
-               (let [b      (- base-delay-us (* (snake :score) difficulty-scale))
-                     horiz? (or (= :left dir) (= :right dir))]
-                 (int (/ (max b 0) (if horiz? 2 1))))
-               :else                     (fixed-delay config))]
+  [{:direction dir :score score} {:variable-speed? variable?} accelerate-steps slow-ticks]
+  (let [base (cond
+               (pos? accelerate-steps) 0
+               variable?               (variable-delay score dir)
+               :else                   base-delay-us)]
     (if (pos? slow-ticks) (* base 2) base)))

@@ -2,14 +2,10 @@
   (:require phel-snake\config :refer [parse-config])
   (:require phel\test :refer [deftest is]))
 
-(deftest test-parse-config-defaults-full
+(deftest test-parse-config-defaults
   (let [c (parse-config [])]
-    (is (= :full (c :mode)))
     (is (= 42 (get-in c [:board :width])))
     (is (= 22 (get-in c [:board :height])))
-    (is (true?  (c :goals?)))
-    (is (true?  (c :grow?)))
-    (is (true?  (c :accelerate?)))
     (is (true?  (c :variable-speed?)))
     (is (false? (c :wrap?)))
     (is (false? (c :debug?)))
@@ -19,18 +15,6 @@
     (is (true?  (c :levels?)))
     (is (= 5 (c :level-every)))
     (is (= 0 (c :obstacle-count)) "no obstacles unless requested")))
-
-(deftest test-parse-config-simple-mode
-  (let [c (parse-config ["simple"])]
-    (is (= :simple (c :mode)))
-    (is (= 40 (get-in c [:board :width])))
-    (is (= 20 (get-in c [:board :height])))
-    (is (false? (c :goals?)))
-    (is (false? (c :grow?)))
-    (is (false? (c :accelerate?)))
-    (is (false? (c :variable-speed?)))
-    (is (false? (c :power-ups?)))
-    (is (false? (c :levels?)))))
 
 (deftest test-parse-config-overrides
   (let [c (parse-config ["width=80" "height=30" "obstacles=7" "level-every=3"])]

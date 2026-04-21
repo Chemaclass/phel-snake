@@ -1,21 +1,11 @@
 # Game modes
 
-## Full (default)
+## Single-player (default)
 
 Classic snake with all the bells on: the snake grows when it eats a
 goal, the speed ramps up with your score, and power-ups, combos, and
 level progression are active. Hitting a wall, your own tail, or an
 obstacle ends the run.
-
-## Simple
-
-A stripped-down version for a calm game or a benchmark. No goals, no
-growth, no acceleration, no power-ups — just you, the snake, and the
-board. Enable with `simple`.
-
-```bash
-vendor/bin/phel run src/main.phel simple
-```
 
 ## Two-player
 

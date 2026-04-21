@@ -6,136 +6,206 @@
                                            p2-direction]]
             [phel-snake\core\logic :as l]
             [phel-snake\core\render :as r]
-            [phel-snake\core\speed :refer [compute-delay fixed-delay accelerate-window]]
+            [phel-snake\core\speed :refer [compute-delay
+                                           accelerate-window
+                                           base-delay-us
+                                           two-player-min-delay-us]]
             [phel-snake\highscore :as hs]))
 
-(defn- initial-snake [config]
-  (if (= :simple (config :mode))
-    (l/snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])
-    (l/snake :right 0 (l/generate-snake-head (config :board)) [])))
+(def- wall-segment-length 3)
+(def- initial-combo {:count 0 :ticks-left 0 :multiplier 1})
+(def- key-r-hex "72")
+(def- key-R-hex "52")
 
-(defn- initial-goal [config snake obstacles]
-  (when (config :goals?)
-    (l/generate-new-goal (config :board) snake obstacles (config :power-ups?))))
+(defn- center [board text]
+  {:x (int (php/round (- (/ (board :width) 2)
+                         (/ (php/strlen text) 2))))
+   :y (int (php/round (/ (board :height) 2)))})
 
-(defn- initial-obstacles [config snake]
-  (let [n (or (config :obstacle-count) 0)]
-    (if (pos? n)
-      (l/generate-obstacles (config :board) snake n)
-      [])))
+(defn- elapsed-secs [start-time]
+  (int (php/round (- (php/microtime true) start-time))))
+
+(defn- initial-snake [{:board board}]
+  (l/snake :right 0 (l/generate-snake-head board) []))
+
+(defn- initial-obstacles [{:board board :obstacle-count n} snake]
+  (if (pos? n) (l/generate-obstacles board snake n) []))
+
+(defn- initial-goal [{:board board :power-ups? pu?} snake obstacles]
+  (l/generate-new-goal board snake obstacles pu?))
+
+(defn- advance-slow-ticks [bonus slow-ticks]
+  (cond
+    (and bonus (pos? (bonus :slow-ticks))) (bonus :slow-ticks)
+    (pos? slow-ticks)                      (dec slow-ticks)
+    :else                                  0))
+
+(defn- advance-accelerate [pressed? steps]
+  (cond
+    pressed?     accelerate-window
+    (pos? steps) (dec steps)
+    :else        0))
 
 (defn- tick
-  "Computes the next snake, goal, and accelerate counter for one tick."
-  [{:keys [snake goal config obstacles slow-ticks combo]} input accelerate-steps]
-  (let [next-direction (l/key->direction (gui/parse-key input))
-        accelerate?    (and (config :accelerate?)
-                         (= (input :hex) l/key-space-hex))
-        updated-goal   (if (config :goals?)
-                       (l/update-goal snake goal (config :board) obstacles (config :power-ups?))
-                       goal)
-        new-goal?      (and (config :goals?) (not= goal updated-goal))
-        bonus          (when new-goal? (l/goal-bonus (get goal :type :normal)))
-        next-combo     (l/advance-combo combo new-goal?)
-        delta          (if new-goal? (* (bonus :score-delta) (next-combo :multiplier)) 0)
-        moved          (l/move-snake snake next-direction)
-        scored         (if new-goal? (update moved :score #(+ % delta)) moved)
-        grown          (if (and new-goal? (config :grow?) (bonus :grow?)) (l/grow-snake scored) scored)
-        next-snake     (if (config :wrap?) (l/wrap-head (config :board) grown) grown)
-        next-slow      (cond
-                    (and bonus (pos? (bonus :slow-ticks))) (bonus :slow-ticks)
-                    (pos? slow-ticks)                      (dec slow-ticks)
-                    :else                                  0)]
-    {:snake next-snake
-     :goal updated-goal
-     :slow-ticks next-slow
-     :combo next-combo
-     :accelerate-steps (if accelerate?
-                         accelerate-window
-                         (max 0 (dec accelerate-steps)))}))
+  "One game step: consumes input + state, returns next state."
+  [{:snake snake :goal goal :config config
+    :obstacles obstacles :slow-ticks slow-ticks :combo combo}
+   input accelerate-steps]
+  (let [{:board board :wrap? wrap? :power-ups? pu?} config
+        next-goal                                   (l/update-goal snake goal board obstacles pu?)
+        ate?                                        (not= goal next-goal)
+        bonus                                       (when ate? (l/goal-bonus (get goal :type :normal)))
+        next-combo                                  (l/advance-combo combo ate?)
+        delta                                       (if ate? (* (bonus :score-delta) (next-combo :multiplier)) 0)
+        dir                                         (l/key->direction (gui/parse-key input))
+        pressed?                                    (= (input :hex) l/key-space-hex)
+        moved                                       (l/move-snake snake dir)
+        grown                                       (if (and ate? (bonus :grow?)) (l/grow-snake moved) moved)
+        scored                                      (update grown :score + delta)
+        next-snake                                  (if wrap? (l/wrap-head board scored) scored)]
+    {:snake            next-snake
+     :goal             next-goal
+     :slow-ticks       (advance-slow-ticks bonus slow-ticks)
+     :combo            next-combo
+     :accelerate-steps (advance-accelerate pressed? accelerate-steps)}))
 
-(defn- render-frame [old-snake snake goal obstacles combo config start-time initial?]
+(defn- render-frame
+  [old-snake snake goal obstacles combo config start-time initial?]
   (if (empty? old-snake)
     (r/render-snake snake)
     (r/render-snake-delta old-snake snake))
   (when initial? (r/render-obstacles obstacles))
   (when goal (r/render-goal goal))
   (r/render-stats snake start-time)
-  (when (and (combo :count) (> (combo :count) 1))
+  (when (> (combo :count) 1)
     (println (format "Combo: x%d" (combo :multiplier))))
   (when (config :debug?)
-    (println (format "; direction: %s  accelerate?: %s  god-mode?: %s"
+    (println (format "; direction: %s  god-mode?: %s"
                      (snake :direction)
-                     (config :accelerate?)
                      (config :god-mode?)))))
 
 (defn- wait-while-paused
-  "Blocks until the user presses 'p' again. Shows a PAUSED banner."
+  "Blocks until 'p' is pressed again."
   [board]
-  (let [x (int (php/round (- (/ (board :width) 2) 3)))
-        y (int (php/round (/ (board :height) 2)))]
+  (let [{:x x :y y} (center board "PAUSED")]
     (gui/render x y "PAUSED")
     (loop []
       (php/usleep 50000)
-      (let [input (gui/read-input 3)]
-        (when-not (= (input :hex) l/key-p-hex)
-          (recur))))
+      (when-not (= (get (gui/read-input 3) :hex) l/key-p-hex)
+        (recur)))
     (gui/render x y "      ")))
 
-(defn- finish
-  "Renders the game-over screen, updates the persisted high score, and returns
-  :replay when the user presses 'r' (or 'R') at the prompt, :exit otherwise."
-  [board snake start-time replay-offered?]
-  (r/render-game-over board snake)
+(defn- print-game-over [snake start-time]
   (let [{:previous prev :new-record? record?} (hs/update-if-higher (snake :score))]
     (println)
     (println)
     (println (format "Final Score: %d points" (snake :score)))
-    (println (format "Total Time: %d secs"
-                     (php/round (- (php/microtime true) start-time))))
+    (println (format "Total Time: %d secs" (elapsed-secs start-time)))
     (if record?
       (println (format "NEW HIGH SCORE! (previous: %d)" prev))
-      (println (format "High Score: %d" prev))))
+      (println (format "High Score: %d" prev)))))
+
+(defn- prompt-replay []
+  (println "Press R to replay, any other key to exit...")
+  (let [hex (get (gui/read-input 3) :hex "")]
+    (if (or (= hex key-r-hex) (= hex key-R-hex)) :replay :exit)))
+
+(defn- finish
+  [board snake start-time replay-offered?]
+  (r/render-game-over board snake)
+  (print-game-over snake start-time)
   (if replay-offered?
-    (do (println "Press R to replay, any other key to exit...")
-        (let [hex (get (gui/read-input 3) :hex "")]
-          (if (or (= hex "72") (= hex "52")) :replay :exit)))
+    (prompt-replay)
     (do (println "Press any key to exit...")
         (gui/read-input 1)
         :exit)))
 
 (defn- maybe-level-up
-  "Spawns an extra wall segment when the score crosses the next threshold.
-  Returns [new-obstacles new-level new-walls-or-nil]."
-  [config snake obstacles goal level]
-  (if (and (config :levels?)
-           (>= (snake :score) (* level (config :level-every))))
-    (let [walls (l/spawn-wall-segment (config :board) snake obstacles goal 3)]
+  "When the score crosses the next level threshold, adds a wall segment.
+  Returns {:obstacles :level :new-walls}."
+  [{:levels? on? :board board :level-every every} snake obstacles goal level]
+  (if (and on? (>= (snake :score) (* level every)))
+    (let [walls (l/spawn-wall-segment board snake obstacles goal wall-segment-length)]
       (if (empty? walls)
-        [obstacles (inc level) nil]
-        [(into obstacles walls) (inc level) walls]))
-    [obstacles level nil]))
+        {:obstacles obstacles             :level (inc level) :new-walls nil}
+        {:obstacles (into obstacles walls) :level (inc level) :new-walls walls}))
+    {:obstacles obstacles :level level :new-walls nil}))
 
-(defn- finish-two [board s1 s2 start-time outcome]
-  (r/render-snake s1 "snake-head" "snake-tail")
-  (r/render-snake s2 "snake2-head" "snake2-tail")
-  (let [text (case outcome
-               :p1 "PLAYER 1 WINS"
-               :p2 "PLAYER 2 WINS"
-               "DRAW")
-        x    (int (php/round (- (/ (board :width) 2)
-                             (/ (php/strlen text) 2))))
-        y    (int (php/round (/ (board :height) 2)))]
-    (gui/render x y text)
-    (println)
-    (println)
-    (println (format "P1 Score: %d | P2 Score: %d" (s1 :score) (s2 :score)))
-    (println (format "Total Time: %d secs"
-                     (php/round (- (php/microtime true) start-time)))))
-  (println "Press any key to exit...")
-  (gui/read-input 1)
-  (php/exit))
+(defn- dead? [board wrap? snake obstacles]
+  (or (and (not wrap?) (l/collision-with-board? board snake))
+      (l/self-collision? snake)
+      (l/obstacle-collision? obstacles snake)))
 
-(defn- two-dead-outcome [p1-dead? p2-dead?]
+(defn- replay-input
+  "{:input :remaining}. In replay mode, pops the next recorded hex."
+  [remaining replaying?]
+  (if replaying?
+    (let [hex (or (first remaining) "")
+          raw (if (= hex "") "" (php/hex2bin hex))]
+      {:input {:raw raw :hex hex} :remaining (or (rest remaining) [])})
+    {:input (gui/read-input 3) :remaining []}))
+
+(defn- play-once
+  "Runs one game session, returning state for the replay/high-score flow."
+  [config replay]
+  (let [seed (if replay (replay :seed) (php/mt_rand 0 1000000))]
+    (php/mt_srand seed)
+    (r/setup-styles)
+    (r/render-board (config :board))
+    (let [{:board board :wrap? wrap?} config
+          start-time                  (php/microtime true)
+          snake0                      (initial-snake config)
+          obstacles0                  (initial-obstacles config snake0)
+          replaying?                  (some? replay)]
+      (loop [old-snake        {}
+             snake            snake0
+             goal             (initial-goal config snake0 obstacles0)
+             obstacles        obstacles0
+             accelerate-steps 0
+             slow-ticks       0
+             combo            initial-combo
+             level            1
+             initial?         true
+             remaining        (if replay (replay :inputs) [])
+             recorded         []]
+        (render-frame old-snake snake goal obstacles combo config start-time initial?)
+        (php/usleep (compute-delay snake config accelerate-steps slow-ticks))
+        (gui/clear-output)
+        (if (dead? board wrap? snake obstacles)
+          {:snake snake :start-time start-time :seed seed
+           :inputs recorded :board board}
+          (let [{:input input :remaining next-remaining}
+                (replay-input remaining replaying?)]
+            (when (and (not replaying?) (= (input :hex) l/key-p-hex))
+              (wait-while-paused board)
+              (r/render-obstacles obstacles)
+              (when goal (r/render-goal goal))
+              (r/render-snake snake))
+            (let [{:snake next-snake :goal next-goal
+                   :accelerate-steps next-accel
+                   :slow-ticks next-slow
+                   :combo next-combo}
+                  (tick {:snake snake :goal goal :config config
+                         :obstacles obstacles :slow-ticks slow-ticks :combo combo}
+                        input accelerate-steps)
+                  {:obstacles next-obs :level next-level :new-walls new-walls}
+                  (maybe-level-up config next-snake obstacles next-goal level)]
+              (when new-walls (r/render-obstacles new-walls))
+              (recur snake next-snake next-goal next-obs
+                     next-accel next-slow next-combo next-level false
+                     next-remaining (push recorded (input :hex))))))))))
+
+(defn- run-single-player [config]
+  (loop [replay nil]
+    (let [{:snake snake :start-time start-time :board board
+           :seed seed :inputs inputs}
+          (play-once config replay)
+          outcome                                                                                 (finish board snake start-time (nil? replay))]
+      (case outcome
+        :replay (recur {:seed seed :inputs inputs})
+        (php/exit)))))
+
+(defn- two-outcome [p1-dead? p2-dead?]
   (cond
     (and p1-dead? p2-dead?) :draw
     p1-dead?                :p2
@@ -153,11 +223,10 @@
         s2-moved  (l/move-snake s2 d2)
         g1?       (l/snake-reach-goal? s1-moved goal)
         g2?       (and (not g1?) (l/snake-reach-goal? s2-moved goal))
-        s1-next   (if g1? (l/grow-snake (update s1-moved :score inc)) s1-moved)
-        s2-next   (if g2? (l/grow-snake (update s2-moved :score inc)) s2-moved)
+        bump      (fn [s eaten?] (if eaten? (l/grow-snake (update s :score inc)) s))
         wrap      (fn [s] (if wrap? (l/wrap-head board s) s))
-        s1-final  (wrap s1-next)
-        s2-final  (wrap s2-next)
+        s1-final  (wrap (bump s1-moved g1?))
+        s2-final  (wrap (bump s2-moved g2?))
         next-goal (if (or g1? g2?)
                     (l/generate-new-goal board s1-final nil false)
                     goal)]
@@ -172,20 +241,35 @@
     (r/render-snake-delta old-s2 s2 "snake2-head" "snake2-tail"))
   (when goal (r/render-goal goal))
   (println (format "\nP1: %d  |  P2: %d" (s1 :score) (s2 :score)))
-  (println (format "Time: %d secs"
-                   (php/round (- (php/microtime true) start-time)))))
+  (println (format "Time: %d secs" (elapsed-secs start-time))))
+
+(defn- finish-two [board s1 s2 start-time outcome]
+  (r/render-snake s1 "snake-head" "snake-tail")
+  (r/render-snake s2 "snake2-head" "snake2-tail")
+  (let [text        (case outcome
+               :p1 "PLAYER 1 WINS"
+               :p2 "PLAYER 2 WINS"
+               "DRAW")
+        {:x x :y y} (center board text)]
+    (gui/render x y text)
+    (println)
+    (println)
+    (println (format "P1 Score: %d | P2 Score: %d" (s1 :score) (s2 :score)))
+    (println (format "Total Time: %d secs" (elapsed-secs start-time))))
+  (println "Press any key to exit...")
+  (gui/read-input 1)
+  (php/exit))
 
 (defn- run-two-player [config]
   (r/setup-styles)
   (r/render-board (config :board))
-  (let [start-time (php/microtime true)
-        board      (config :board)
-        wrap?      (config :wrap?)
-        delay-us   (max 80000 (fixed-delay config))
-        mid-y      (int (/ (board :height) 2))
-        s1-0       (l/snake :right 0 {:x 5 :y mid-y} [])
-        s2-0       (l/snake :left 0 {:x (- (board :width) 5) :y mid-y} [])
-        goal0      (l/generate-new-goal board s1-0 nil false)]
+  (let [{:board board :wrap? wrap?} config
+        start-time                  (php/microtime true)
+        delay-us                    (max two-player-min-delay-us base-delay-us)
+        mid-y                       (int (/ (board :height) 2))
+        s1-0                        (l/snake :right 0 {:x 5 :y mid-y} [])
+        s2-0                        (l/snake :left  0 {:x (- (board :width) 5) :y mid-y} [])
+        goal0                       (l/generate-new-goal board s1-0 nil false)]
     (loop [old-s1 {} old-s2 {} s1 s1-0 s2 s2-0 goal goal0]
       (render-two old-s1 old-s2 s1 s2 goal start-time)
       (php/usleep delay-us)
@@ -193,91 +277,13 @@
       (let [p1-dead? (two-dead? board wrap? s1 s2)
             p2-dead? (two-dead? board wrap? s2 s1)]
         (when (or p1-dead? p2-dead?)
-          (finish-two board s1 s2 start-time (two-dead-outcome p1-dead? p2-dead?)))
+          (finish-two board s1 s2 start-time (two-outcome p1-dead? p2-dead?)))
         (let [events                                    (parse-input-events (get (gui/read-input 8) :raw))
               d1                                        (pick-direction events p1-direction)
               d2                                        (pick-direction events p2-direction)
               {:s1 s1-next :s2 s2-next :goal goal-next}
               (advance-two board wrap? s1 s2 goal d1 d2)]
           (recur s1 s2 s1-next s2-next goal-next))))))
-
-(defn- replay-input
-  "Returns {:input :remaining}. In replay mode, pops the next recorded hex
-  from `remaining`; in live mode, polls stdin. Recorded hex `\"\"` represents
-  a no-input tick."
-  [remaining replaying?]
-  (if replaying?
-    (let [hex (or (first remaining) "")
-          raw (if (= hex "") "" (php/hex2bin hex))]
-      {:input {:raw raw :hex hex} :remaining (or (rest remaining) [])})
-    {:input (gui/read-input 3) :remaining []}))
-
-(defn- play-once
-  "Runs one game session. Returns
-  {:snake :start-time :seed :inputs :board} so the caller can show the
-  game-over screen and offer a replay. When `replay` is given, plays back
-  the recorded run deterministically (no live input)."
-  [config replay]
-  (let [seed (if replay (replay :seed) (php/mt_rand 0 1000000))]
-    (php/mt_srand seed)
-    (r/setup-styles)
-    (r/render-board (config :board))
-    (let [start-time (php/microtime true)
-          board      (config :board)
-          snake0     (initial-snake config)
-          obstacles0 (initial-obstacles config snake0)
-          replaying? (some? replay)]
-      (loop [old-snake        {}
-             snake            snake0
-             goal             (initial-goal config snake0 obstacles0)
-             obstacles        obstacles0
-             accelerate-steps 0
-             slow-ticks       0
-             combo            {:count 0 :ticks-left 0 :multiplier 1}
-             level            1
-             initial?         true
-             remaining        (if replay (replay :inputs) [])
-             recorded         []]
-        (render-frame old-snake snake goal obstacles combo config start-time initial?)
-        (php/usleep (compute-delay snake config accelerate-steps slow-ticks))
-        (gui/clear-output)
-        (if (or (and (not (config :wrap?)) (l/collision-with-board? board snake))
-                (l/self-collision? snake)
-                (l/obstacle-collision? obstacles snake))
-          {:snake snake :start-time start-time :seed seed
-           :inputs recorded :board board}
-          (let [{:input input :remaining next-remaining}
-                (replay-input remaining replaying?)]
-            (when (and (not replaying?) (= (input :hex) l/key-p-hex))
-              (wait-while-paused board)
-              (r/render-obstacles obstacles)
-              (when goal (r/render-goal goal))
-              (r/render-snake snake))
-            (let [{:snake next-snake
-                   :goal next-goal
-                   :accelerate-steps next-accel
-                   :slow-ticks next-slow
-                   :combo next-combo}
-                  (tick {:snake snake :goal goal :config config
-                         :obstacles obstacles :slow-ticks slow-ticks :combo combo}
-                        input accelerate-steps)
-                  [next-obs next-level new-walls]
-                  (maybe-level-up config next-snake obstacles next-goal level)]
-              (when new-walls (r/render-obstacles new-walls))
-              (recur snake next-snake next-goal next-obs
-                     next-accel next-slow next-combo next-level false
-                     next-remaining (push recorded (input :hex))))))))))
-
-(defn- run-single-player [config]
-  (loop [replay nil]
-    (let [{:snake snake :start-time start-time :board board
-           :seed seed :inputs inputs}
-          (play-once config replay)
-          replaying?                                                                              (some? replay)
-          outcome                                                                                 (finish board snake start-time (not replaying?))]
-      (case outcome
-        :replay (recur {:seed seed :inputs inputs})
-        (php/exit)))))
 
 (defn run [config]
   (if (config :two-player?)

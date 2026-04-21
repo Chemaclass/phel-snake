@@ -4,9 +4,9 @@
 
 (def direction-vectors
   {:left  {:dx -1 :dy 0}
-   :right {:dx 1  :dy 0}
-   :up    {:dx 0  :dy -1}
-   :down  {:dx 0  :dy 1}})
+   :right {:dx  1 :dy 0}
+   :up    {:dx  0 :dy -1}
+   :down  {:dx  0 :dy  1}})
 
 (def key->direction
   {:left :left :right :right :up :up :down :down})
@@ -15,45 +15,47 @@
   {"w" :up "s" :down "a" :left "d" :right})
 
 (def key-space-hex "20")
-(def key-p-hex "70")
+(def key-p-hex     "70")
 
 (def- left-wall-x 1)
-(def- top-wall-y 0)
+(def- top-wall-y  0)
+
+(def combo-window-ticks 30)
+(def combo-multiplier-cap 5)
+(def- random-attempt-limit 50)
+(def- spawn-wall-attempt-limit 30)
+(def- snake-spawn-corridor 7)
+(def- obstacle-attempt-multiplier 20)
 
 (defn step-head
-  "Returns a new head position moved one cell in `direction`."
-  [head direction]
+  "New head position moved one cell in `direction`."
+  [{:x x :y y} direction]
   (let [{:dx dx :dy dy} (direction-vectors direction)]
-    {:x (+ (head :x) dx)
-     :y (+ (head :y) dy)}))
+    {:x (+ x dx) :y (+ y dy)}))
 
 (defn move-snake
-  "Advances the snake by one cell; preserves length. `next-direction` may be nil."
-  [s next-direction]
-  (let [direction (or next-direction (s :direction))
-        new-head  (step-head (s :head) direction)
-        new-tail  (push (into [] (drop 1 (s :tail))) (s :head))]
-    (-> s
-        (put :direction direction)
-        (put :head new-head)
-        (put :tail new-tail))))
+  "Advance the snake by one cell; preserves length. `next-direction` may be nil."
+  [{:direction d :head head :tail tail :as s} next-direction]
+  (let [direction (or next-direction d)]
+    (assoc s
+           :direction direction
+           :head      (step-head head direction)
+           :tail      (conj (vec (drop 1 tail)) head))))
 
 (defn grow-snake
-  "Advances the snake by one cell without shrinking the tail."
-  [s]
-  (let [new-head (step-head (s :head) (s :direction))]
-    (-> s
-        (put :head new-head)
-        (update :tail #(push % (s :head))))))
+  "Advance the snake by one cell without shrinking the tail."
+  [{:head head :as s}]
+  (-> s
+      (assoc :head (step-head head (s :direction)))
+      (update :tail conj head)))
 
 (defn collision-with-board?
   "True when the snake head has hit the playable-area boundary."
-  [board s]
-  (let [{:x x :y y} (s :head)]
-    (or (<= x left-wall-x)
-        (<= y top-wall-y)
-        (>= x (board :width))
-        (>= y (dec (board :height))))))
+  [{:width w :height h} {:head {:x x :y y}}]
+  (or (<= x left-wall-x)
+      (<= y top-wall-y)
+      (>= x w)
+      (>= y (dec h))))
 
 (defn- inside-play-area?
   [{:width w :height h} {:x x :y y}]
@@ -64,24 +66,20 @@
 
 (defn- cell-key [{:x x :y y}] (str x "," y))
 
+(defn- mark [acc cell] (assoc acc (cell-key cell) true))
+
 (defn occupied-set
-  "Set of cells (as `x,y` keys) occupied by the snake. Enables O(1) membership
-  checks for goal placement and self-collision."
-  [s]
-  (reduce (fn [acc t] (put acc (cell-key t) true))
-          {(cell-key (s :head)) true}
-          (s :tail)))
+  "Set of cells (as `x,y` keys) occupied by the snake."
+  [{:head head :tail tail}]
+  (reduce mark {(cell-key head) true} tail))
 
 (defn cells-set
-  "Set of cells (as `x,y` keys) from a sequence of {:x :y} cells."
+  "Set of cells from a seq of `{:x :y}` cells."
   [cells]
-  (reduce (fn [acc c] (put acc (cell-key c) true)) {} (or cells [])))
+  (reduce mark {} (or cells [])))
 
 (defn- on-occupied? [occ pos]
   (contains? occ (cell-key pos)))
-
-(defn- on-snake? [s pos]
-  (on-occupied? (occupied-set s) pos))
 
 (defn on-any-cell?
   "True when `pos` matches any cell in `cells`."
@@ -90,13 +88,12 @@
 
 (defn self-collision?
   "True when the snake head overlaps any cell of its own tail."
-  [s]
-  (let [{:x hx :y hy} (s :head)]
-    (some? (find #(and (= (% :x) hx) (= (% :y) hy)) (s :tail)))))
+  [{:head h :tail tail}]
+  (let [{:x hx :y hy} h]
+    (some? (find #(and (= (% :x) hx) (= (% :y) hy)) tail))))
 
 (defn wrap-head
-  "Returns a snake whose head is wrapped to the opposite wall when it has
-  crossed the play-area boundary. Used in wrap-around mode."
+  "Wrap the head to the opposite wall when it crosses the play-area boundary."
   [{:width w :height h} s]
   (let [{:x x :y y} (s :head)
         min-x       (inc left-wall-x)
@@ -107,25 +104,22 @@
         wy          (cond (> y max-y) min-y (< y min-y) max-y :else y)]
     (if (and (= wx x) (= wy y))
       s
-      (put s :head {:x wx :y wy}))))
+      (assoc s :head {:x wx :y wy}))))
 
-(defn- free-cells [board occ]
-  (let [w (board :width) h (board :height)]
-    (for [x :range [(inc left-wall-x) (dec w)]
-          y :range [(inc top-wall-y) (dec h)]
-          :when (not (on-occupied? occ {:x x :y y}))]
-      {:x x :y y})))
-
-(def- random-attempt-limit 50)
+(defn- free-cells [{:width w :height h} occ]
+  (for [x :range [(inc left-wall-x) (dec w)]
+        y :range [(inc top-wall-y)  (dec h)]
+        :let [pos {:x x :y y}]
+        :when (not (on-occupied? occ pos))]
+    pos))
 
 (defn random-goal-type
   "Picks a goal type weighted toward :normal. ~8% :golden, ~8% :slow."
   []
   (let [r (rand-int 100)]
-    (cond
-      (< r 8)  :golden
-      (< r 16) :slow
-      :else    :normal)))
+    (cond (< r 8)  :golden
+          (< r 16) :slow
+          :else    :normal)))
 
 (defn goal-bonus
   "Effect granted by consuming a goal of the given type."
@@ -135,10 +129,9 @@
     :slow   {:score-delta 2 :grow? true :slow-ticks 40}
     {:score-delta 1 :grow? true :slow-ticks 0}))
 
-(defn- random-free-pos [board occ]
+(defn- random-free-pos [{:width w :height h :as board} occ]
   (loop [attempts 0]
-    (let [pos {:x (rand-int (board :width))
-               :y (rand-int (board :height))}]
+    (let [pos {:x (rand-int w) :y (rand-int h)}]
       (cond
         (and (inside-play-area? board pos) (not (on-occupied? occ pos))) pos
         (>= attempts random-attempt-limit)
@@ -149,18 +142,16 @@
 (defn generate-new-goal
   "Random cell inside the play area; avoids the snake body (and obstacles, if
   given). When `power-ups?` is truthy, the returned goal includes a random
-  :type (:normal / :golden / :slow). Falls back to a uniform pick over free
-  cells after repeated collisions."
-  ([board] (generate-new-goal board nil nil false))
-  ([board s] (generate-new-goal board s nil false))
-  ([board s obstacles] (generate-new-goal board s obstacles false))
+  :type (:normal / :golden / :slow)."
+  ([board]                              (generate-new-goal board nil nil false))
+  ([board s]                            (generate-new-goal board s nil false))
+  ([board s obstacles]                  (generate-new-goal board s obstacles false))
   ([board s obstacles power-ups?]
    (let [occ (cond-> (if s (occupied-set s) {})
                      (and obstacles (not (empty? obstacles)))
-                     (merge (cells-set obstacles)))
-         pos (random-free-pos board occ)]
-     (when pos
-       (merge pos {:type (if power-ups? (random-goal-type) :normal)})))))
+                     (merge (cells-set obstacles)))]
+     (when-let [pos (random-free-pos board occ)]
+       (assoc pos :type (if power-ups? (random-goal-type) :normal))))))
 
 (defn generate-snake-head
   "Random starting head position near the left side of the board."
@@ -172,56 +163,58 @@
        (= (get-in s [:head :y]) (g :y))))
 
 (defn update-goal
-  "Returns a fresh goal if the snake reached `g`, else `g` unchanged."
-  ([s g board] (update-goal s g board nil false))
-  ([s g board obstacles] (update-goal s g board obstacles false))
+  "Fresh goal if the snake reached `g`, else `g` unchanged."
+  ([s g board]                     (update-goal s g board nil false))
+  ([s g board obstacles]            (update-goal s g board obstacles false))
   ([s g board obstacles power-ups?]
    (if (snake-reach-goal? s g)
      (generate-new-goal board s obstacles power-ups?)
      g)))
 
+(defn- spawn-corridor [s]
+  (let [head            (s :head)
+        {:dx dx :dy dy} (direction-vectors (s :direction))]
+    (for [i :range [1 snake-spawn-corridor]]
+      {:x (+ (head :x) (* i dx))
+       :y (+ (head :y) (* i dy))})))
+
 (defn generate-obstacles
   "Random obstacle cells in the play area, avoiding the snake and a short
   corridor in front of it so spawning isn't an instant death."
-  [board s n]
-  (let [dir            (direction-vectors (s :direction))
-        reserved-cells (into [] (for [i :range [1 7]]
-                                  {:x (+ (get-in s [:head :x]) (* i (dir :dx)))
-                                   :y (+ (get-in s [:head :y]) (* i (dir :dy)))}))
-        reserved       (merge (occupied-set s) (cells-set reserved-cells))]
+  [{:width w :height h :as board} s n]
+  (let [reserved (merge (occupied-set s) (cells-set (spawn-corridor s)))
+        limit    (* n obstacle-attempt-multiplier)]
     (loop [obs [] blocked reserved attempts 0]
       (cond
-        (= (count obs) n)      obs
-        (>= attempts (* n 20)) obs
+        (= (count obs) n)   obs
+        (>= attempts limit) obs
         :else
-        (let [pos {:x (rand-int (board :width))
-                   :y (rand-int (board :height))}
-              k   (cell-key pos)]
+        (let [pos {:x (rand-int w) :y (rand-int h)}]
           (if (and (inside-play-area? board pos)
-                   (not (contains? blocked k)))
-            (recur (push obs pos) (put blocked k true) 0)
+                   (not (on-occupied? blocked pos)))
+            (recur (conj obs pos) (mark blocked pos) 0)
             (recur obs blocked (inc attempts))))))))
 
+(def- wall-dirs [{:dx 1 :dy 0} {:dx -1 :dy 0} {:dx 0 :dy 1} {:dx 0 :dy -1}])
+
+(defn- wall-cells [start {:dx dx :dy dy} len]
+  (for [i :range [0 len]]
+    {:x (+ (start :x) (* i dx))
+     :y (+ (start :y) (* i dy))}))
+
 (defn spawn-wall-segment
-  "Finds `len` contiguous free cells in a random direction, avoiding snake,
-  existing obstacles, and the current goal. Returns a vector of cells, or
-  an empty vector if no suitable location is found."
-  [board s obstacles goal len]
+  "`len` contiguous free cells in a random direction. Returns `[]` if no spot found."
+  [{:width w :height h :as board} s obstacles goal len]
   (let [blocked (cond-> (occupied-set s)
                         (and obstacles (not (empty? obstacles))) (merge (cells-set obstacles))
-                        goal (put (cell-key goal) true))
-        dirs    [{:dx 1 :dy 0} {:dx -1 :dy 0} {:dx 0 :dy 1} {:dx 0 :dy -1}]]
+                        goal                                     (mark goal))]
     (loop [attempts 0]
-      (if (>= attempts 30)
+      (if (>= attempts spawn-wall-attempt-limit)
         []
-        (let [start     {:x (rand-int (board :width))
-                     :y (rand-int (board :height))}
-              dir       (nth dirs (rand-int 4))
-              cells     (into [] (for [i :range [0 len]]
-                               {:x (+ (start :x) (* i (dir :dx)))
-                                :y (+ (start :y) (* i (dir :dy)))}))
+        (let [start     {:x (rand-int w) :y (rand-int h)}
+              cells     (wall-cells start (nth wall-dirs (rand-int 4)) len)
               all-free? (every? #(and (inside-play-area? board %)
-                                  (not (contains? blocked (cell-key %))))
+                                  (not (on-occupied? blocked %)))
                                 cells)]
           (if all-free? cells (recur (inc attempts))))))))
 
@@ -231,25 +224,25 @@
   (on-any-cell? obstacles (s :head)))
 
 (defn opponent-collision?
-  "True when `me`'s head is on any cell of `other` (head or tail)."
+  "True when `me`'s head is on any cell of `other`."
   [me other]
-  (on-any-cell? (push (other :tail) (other :head)) (me :head)))
-
-(def combo-window-ticks 30)
-(def combo-multiplier-cap 5)
+  (on-any-cell? (conj (other :tail) (other :head)) (me :head)))
 
 (defn advance-combo
-  "Advance combo state by one tick.
-  - `ate?` true iff the snake consumed a goal this tick.
-  Returns {:count :ticks-left :multiplier} where :multiplier is the factor
-  to apply to the score delta for the goal eaten this tick (1 if none)."
+  "One combo tick. `ate?` is true when a goal was consumed.
+  Returns `{:count :ticks-left :multiplier}`; `:multiplier` applies to the
+  score delta for this tick (1 if no eat)."
   [{:count c :ticks-left t} ate?]
   (cond
     ate?
-    (let [new-count (if (pos? t) (inc c) 1)
-          mult      (min combo-multiplier-cap (max 1 new-count))]
-      {:count new-count :ticks-left combo-window-ticks :multiplier mult})
+    (let [new-count (if (pos? t) (inc c) 1)]
+      {:count      new-count
+       :ticks-left combo-window-ticks
+       :multiplier (min combo-multiplier-cap new-count)})
     (pos? t)
     (let [nt (dec t)]
-      {:count (if (pos? nt) c 0) :ticks-left nt :multiplier 1})
-    :else    {:count 0 :ticks-left 0 :multiplier 1}))
+      {:count      (if (pos? nt) c 0)
+       :ticks-left nt
+       :multiplier 1})
+    :else
+    {:count 0 :ticks-left 0 :multiplier 1}))
