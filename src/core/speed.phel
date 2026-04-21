@@ -13,12 +13,12 @@
   mode, halves horizontally, zeros during an accelerate burst, doubles when
   a :slow power-up is active."
   [snake config accelerate-steps slow-ticks]
-  (let [dir (snake :direction)
+  (let [dir  (snake :direction)
         base (cond
-               (pos? accelerate-steps) 0
+               (pos? accelerate-steps)   0
                (config :variable-speed?)
-               (let [b (- base-delay-us (* (snake :score) difficulty-scale))
+               (let [b      (- base-delay-us (* (snake :score) difficulty-scale))
                      horiz? (or (= :left dir) (= :right dir))]
-                 (php/intval (/ (max b 0) (if horiz? 2 1))))
-               :else (fixed-delay config))]
+                 (int (/ (max b 0) (if horiz? 2 1))))
+               :else                     (fixed-delay config))]
     (if (pos? slow-ticks) (* base 2) base)))

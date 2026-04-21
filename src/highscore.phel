@@ -14,7 +14,7 @@
   []
   (let [p (path)]
     (if (php/file_exists p)
-      (php/intval (php/trim (php/file_get_contents p)))
+      (int (php/trim (php/file_get_contents p)))
       0)))
 
 (defn save-score
@@ -27,7 +27,7 @@
   Returns a map with :previous, :current, :new-record?."
   [score]
   (let [previous (load-score)
-        record? (> score previous)]
+        record?  (> score previous)]
     (when record? (save-score score))
     {:previous previous
      :current score

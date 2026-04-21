@@ -4,17 +4,17 @@
 (defn- obstacle-count [args simple?]
   (let [explicit (get-int-arg args "obstacles" -1)]
     (cond
-      (>= explicit 0) explicit
+      (>= explicit 0)                    explicit
       (contains-value? args "obstacles") 10
-      :else 0)))
+      :else                              0)))
 
 (defn parse-config
   "Build the game config map from command-line args."
   [args]
-  (let [simple? (contains-value? args "simple")
-        debug? (contains-value? args "debug")
+  (let [simple?   (contains-value? args "simple")
+        debug?    (contains-value? args "debug")
         god-mode? (contains-value? args "god-mode")
-        wrap? (contains-value? args "wrap")]
+        wrap?     (contains-value? args "wrap")]
     {:mode (if simple? :simple :full)
      :board {:width (get-int-arg args "width" (if simple? 40 42))
              :height (get-int-arg args "height" (if simple? 20 22))}

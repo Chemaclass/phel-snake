@@ -4,7 +4,7 @@
   "Returns the int value of `key=N` in args, or default if absent."
   [args key default]
   (let [prefix (str key "=")
-        arg (find #(php/str_starts_with (or % "") prefix) args)]
+        arg    (find #(php/str_starts_with (or % "") prefix) args)]
     (if (empty? arg)
       default
-      (php/intval (get (php/explode "=" arg) 1)))))
+      (int (nth (php/explode "=" arg) 1)))))

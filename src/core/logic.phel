@@ -31,8 +31,8 @@
   "Advances the snake by one cell; preserves length. `next-direction` may be nil."
   [s next-direction]
   (let [direction (or next-direction (s :direction))
-        new-head (step-head (s :head) direction)
-        new-tail (push (into [] (drop 1 (s :tail))) (s :head))]
+        new-head  (step-head (s :head) direction)
+        new-tail  (push (into [] (drop 1 (s :tail))) (s :head))]
     (-> s
         (put :direction direction)
         (put :head new-head)
@@ -99,12 +99,12 @@
   crossed the play-area boundary. Used in wrap-around mode."
   [{:width w :height h} s]
   (let [{:x x :y y} (s :head)
-        min-x (inc left-wall-x)
-        max-x (dec w)
-        min-y (inc top-wall-y)
-        max-y (- h 2)
-        wx (cond (> x max-x) min-x (< x min-x) max-x :else x)
-        wy (cond (> y max-y) min-y (< y min-y) max-y :else y)]
+        min-x       (inc left-wall-x)
+        max-x       (dec w)
+        min-y       (inc top-wall-y)
+        max-y       (- h 2)
+        wx          (cond (> x max-x) min-x (< x min-x) max-x :else x)
+        wy          (cond (> y max-y) min-y (< y min-y) max-y :else y)]
     (if (and (= wx x) (= wy y))
       s
       (put s :head {:x wx :y wy}))))
@@ -123,9 +123,9 @@
   []
   (let [r (rand-int 100)]
     (cond
-      (< r 8) :golden
+      (< r 8)  :golden
       (< r 16) :slow
-      :else :normal)))
+      :else    :normal)))
 
 (defn goal-bonus
   "Effect granted by consuming a goal of the given type."
@@ -143,8 +143,8 @@
         (and (inside-play-area? board pos) (not (on-occupied? occ pos))) pos
         (>= attempts random-attempt-limit)
         (let [free (free-cells board occ)]
-          (when-not (empty? free) (get free (rand-int (count free)))))
-        :else (recur (inc attempts))))))
+          (when-not (empty? free) (nth free (rand-int (count free)))))
+        :else                                                            (recur (inc attempts))))))
 
 (defn generate-new-goal
   "Random cell inside the play area; avoids the snake body (and obstacles, if
@@ -184,19 +184,19 @@
   "Random obstacle cells in the play area, avoiding the snake and a short
   corridor in front of it so spawning isn't an instant death."
   [board s n]
-  (let [dir (direction-vectors (s :direction))
+  (let [dir            (direction-vectors (s :direction))
         reserved-cells (into [] (for [i :range [1 7]]
                                   {:x (+ (get-in s [:head :x]) (* i (dir :dx)))
                                    :y (+ (get-in s [:head :y]) (* i (dir :dy)))}))
-        reserved (merge (occupied-set s) (cells-set reserved-cells))]
+        reserved       (merge (occupied-set s) (cells-set reserved-cells))]
     (loop [obs [] blocked reserved attempts 0]
       (cond
-        (= (count obs) n) obs
+        (= (count obs) n)      obs
         (>= attempts (* n 20)) obs
         :else
         (let [pos {:x (rand-int (board :width))
                    :y (rand-int (board :height))}
-              k (cell-key pos)]
+              k   (cell-key pos)]
           (if (and (inside-play-area? board pos)
                    (not (contains? blocked k)))
             (recur (push obs pos) (put blocked k true) 0)
@@ -210,14 +210,14 @@
   (let [blocked (cond-> (occupied-set s)
                         (and obstacles (not (empty? obstacles))) (merge (cells-set obstacles))
                         goal (put (cell-key goal) true))
-        dirs [{:dx 1 :dy 0} {:dx -1 :dy 0} {:dx 0 :dy 1} {:dx 0 :dy -1}]]
+        dirs    [{:dx 1 :dy 0} {:dx -1 :dy 0} {:dx 0 :dy 1} {:dx 0 :dy -1}]]
     (loop [attempts 0]
       (if (>= attempts 30)
         []
-        (let [start {:x (rand-int (board :width))
+        (let [start     {:x (rand-int (board :width))
                      :y (rand-int (board :height))}
-              dir (get dirs (rand-int 4))
-              cells (into [] (for [i :range [0 len]]
+              dir       (nth dirs (rand-int 4))
+              cells     (into [] (for [i :range [0 len]]
                                {:x (+ (start :x) (* i (dir :dx)))
                                 :y (+ (start :y) (* i (dir :dy)))}))
               all-free? (every? #(and (inside-play-area? board %)
@@ -247,9 +247,9 @@
   (cond
     ate?
     (let [new-count (if (pos? t) (inc c) 1)
-          mult (min combo-multiplier-cap (max 1 new-count))]
+          mult      (min combo-multiplier-cap (max 1 new-count))]
       {:count new-count :ticks-left combo-window-ticks :multiplier mult})
     (pos? t)
     (let [nt (dec t)]
       {:count (if (pos? nt) c 0) :ticks-left nt :multiplier 1})
-    :else {:count 0 :ticks-left 0 :multiplier 1}))
+    :else    {:count 0 :ticks-left 0 :multiplier 1}))

@@ -1,6 +1,7 @@
 .idea/
 .gacela/
-.claude/
+.phel/
+.claude/settings.local.json
 src/PhelGenerated/
 vendor/
 out/

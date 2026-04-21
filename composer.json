@@ -10,12 +10,11 @@
     "require": {
         "php": ">=8.3",
         "ext-readline": "*",
-        "phel-lang/phel-lang": "^0.32",
-        "chemaclass/phel-cli-gui": "^0.8"
+        "phel-lang/phel-lang": "^0.34",
+        "chemaclass/phel-cli-gui": "^0.9"
     },
     "require-dev": {
-        "roave/security-advisories": "dev-latest",
-        "symfony/var-dumper": "6.*"
+        "roave/security-advisories": "dev-latest"
     },
     "minimum-stability": "dev",
     "scripts": {

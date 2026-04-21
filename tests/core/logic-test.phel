@@ -71,7 +71,7 @@
       "head overlaps tail cell"))
 
 (deftest test-advance-combo
-  (let [zero {:count 0 :ticks-left 0 :multiplier 1}
+  (let [zero      {:count 0 :ticks-left 0 :multiplier 1}
         first-eat (advance-combo zero true)]
     (is (= 1 (first-eat :count)) "first eat starts the combo")
     (is (= 1 (first-eat :multiplier)) "first eat has no multiplier")
@@ -129,7 +129,7 @@
     (is (true?  (obstacle-collision? [{:x 3 :y 3}] s)) "hit")))
 
 (deftest test-opponent-collision?
-  (let [s1 (snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])
+  (let [s1      (snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])
         s2-head (snake :left 0 {:x 5 :y 5} [])
         s2-tail (snake :left 0 {:x 4 :y 5} [])
         s2-miss (snake :left 0 {:x 9 :y 9} [])]
@@ -143,7 +143,7 @@
   (is (false? (on-any-cell? [{:x 1 :y 1}] {:x 2 :y 1})) "miss"))
 
 (deftest test-advance-combo-expires
-  (let [start (advance-combo {:count 0 :ticks-left 0} true)
+  (let [start              (advance-combo {:count 0 :ticks-left 0} true)
         eventually-expired
         (loop [c start n 40]
           (if (zero? n) c (recur (advance-combo c false) (dec n))))]

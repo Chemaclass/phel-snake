@@ -25,7 +25,7 @@
       "non-variable full mode = base delay"))
 
 (deftest test-compute-delay-horizontal-halves
-  (let [vert (compute-delay (snake :up 0) full-cfg 0 0)
+  (let [vert  (compute-delay (snake :up 0) full-cfg 0 0)
         horiz (compute-delay (snake :right 0) full-cfg 0 0)]
     (is (= base-delay-us vert) "vertical uses full base")
     (is (= (php/intval (/ base-delay-us 2)) horiz) "horizontal halves delay")))

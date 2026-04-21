@@ -13,13 +13,13 @@
     (is (= "77" (get (first events) :hex)))))
 
 (deftest test-parse-input-events-arrow
-  (let [arrow (php/hex2bin "1b5b41")
+  (let [arrow  (php/hex2bin "1b5b41")
         events (parse-input-events arrow)]
     (is (= 1 (count events)) "3-byte CSI sequence is one event")
     (is (= "1b5b41" (get (first events) :hex)))))
 
 (deftest test-parse-input-events-mixed
-  (let [buf (str "w" (php/hex2bin "1b5b43") "s")
+  (let [buf    (str "w" (php/hex2bin "1b5b43") "s")
         events (parse-input-events buf)]
     (is (= 3 (count events)))
     (is (= "77" (get (get events 0) :hex)))
