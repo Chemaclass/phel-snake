@@ -1,7 +1,8 @@
 (ns phel-snake\core\speed)
 
 (def base-delay-us 140000)
-(def difficulty-scale 10000)
+(def min-delay-us 60000)
+(def difficulty-scale 4000)
 (def accelerate-window 3)
 (def two-player-min-delay-us 80000)
 
@@ -9,8 +10,8 @@
   (or (= :left dir) (= :right dir)))
 
 (defn- variable-delay [score dir]
-  (let [floor (max 0 (- base-delay-us (* score difficulty-scale)))]
-    (int (/ floor (if (horizontal? dir) 2 1)))))
+  (let [delay (max min-delay-us (- base-delay-us (* score difficulty-scale)))]
+    (int (/ delay (if (horizontal? dir) 2 1)))))
 
 (defn compute-delay
   "Microseconds to sleep between frames. Scales with score in variable-speed

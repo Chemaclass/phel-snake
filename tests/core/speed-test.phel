@@ -1,6 +1,7 @@
 (ns phel-snake-tests\core\speed-test
   (:require phel-snake\core\speed :refer [compute-delay
                                           base-delay-us
+                                          min-delay-us
                                           difficulty-scale])
   (:require phel\test :refer [deftest is]))
 
@@ -37,4 +38,4 @@
 
 (deftest test-compute-delay-score-clamped
   (let [huge (compute-delay (snake :up 1000) variable-cfg 0 0)]
-    (is (>= huge 0) "delay never negative regardless of score")))
+    (is (= min-delay-us huge) "delay bottoms out at the min floor, not zero")))
