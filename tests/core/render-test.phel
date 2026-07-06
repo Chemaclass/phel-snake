@@ -1,0 +1,17 @@
+(ns phel-snake-tests\core\render-test
+  (:require phel-snake\core\render :as r)
+  (:require phel\test :refer [deftest is]))
+
+# Regression: a param named `new` was parsed as the `new` special form,
+# crashing render-snake-delta at runtime on every frame after the first.
+(deftest test-render-snake-delta-runs
+  (php/ob_start)
+  (try
+    (r/setup-styles)
+    (r/render-snake-delta {:head {:x 2 :y 2} :tail [{:x 1 :y 2}]}
+                          {:head {:x 3 :y 2} :tail [{:x 2 :y 2}]})
+    (r/render-snake-delta {:head {:x 3 :y 2} :tail []}
+                          {:head {:x 4 :y 2} :tail []}
+                          "snake2-head" "snake2-tail")
+    (is true "delta render completes without throwing")
+    (finally (php/ob_end_clean))))

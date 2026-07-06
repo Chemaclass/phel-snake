@@ -40,11 +40,11 @@
 (defn render-snake-delta
   "Clears the dropped tail tip, repaints the old head as tail, draws the new
   head. O(1) per frame instead of O(length)."
-  ([old new] (render-snake-delta old new "snake-head" "snake-tail"))
-  ([old new head-style tail-style]
-   (let [old-tail (old :tail)
-         old-head (old :head)
-         new-head (new :head)]
+  ([old-snake new-snake] (render-snake-delta old-snake new-snake "snake-head" "snake-tail"))
+  ([old-snake new-snake head-style tail-style]
+   (let [old-tail (old-snake :tail)
+         old-head (old-snake :head)
+         new-head (new-snake :head)]
      (when-first [dropped old-tail]
                  (when-not (same-cell? dropped new-head)
                    (gui/render (dropped :x) (dropped :y) " ")))
