@@ -47,18 +47,18 @@
     :else        0))
 
 (defn- tick
-  "One game step: consumes input + state, returns next state."
+  "One game step: consumes resolved input + state, returns next state.
+  `dir` is the direction to turn (nil = keep going); `pressed?` is the
+  accelerate key."
   [{:snake snake :goal goal :config config
     :obstacles obstacles :slow-ticks slow-ticks :combo combo}
-   input accelerate-steps]
+   dir pressed? accelerate-steps]
   (let [{:board board :wrap? wrap? :power-ups? pu?} config
         next-goal                                   (l/update-goal snake goal board obstacles pu?)
         ate?                                        (not= goal next-goal)
         bonus                                       (when ate? (l/goal-bonus (get goal :type :normal)))
         next-combo                                  (l/advance-combo combo ate?)
         delta                                       (if ate? (* (bonus :score-delta) (next-combo :multiplier)) 0)
-        dir                                         (l/key->direction (gui/parse-key input))
-        pressed?                                    (= (input :hex) l/key-space-hex)
         moved                                       (l/move-snake snake dir)
         grown                                       (if (and ate? (bonus :grow?)) (l/grow-snake moved) moved)
         scored                                      (update grown :score + delta)
@@ -143,7 +143,10 @@
     (let [hex (or (first remaining) "")
           raw (if (= hex "") "" (php/hex2bin hex))]
       {:input {:raw raw :hex hex} :remaining (or (rest remaining) [])})
-    {:input (gui/read-input 3) :remaining []}))
+    {:input (gui/read-input 8) :remaining []}))
+
+(defn- events-have? [events hex]
+  (some? (find #(= (% :hex) hex) events)))
 
 (defn- play-once
   "Runs one game session, returning state for the replay/high-score flow."
@@ -175,8 +178,11 @@
           {:snake snake :start-time start-time :seed seed
            :inputs recorded :board board}
           (let [{:input input :remaining next-remaining}
-                (replay-input remaining replaying?)]
-            (when (and (not replaying?) (= (input :hex) l/key-p-hex))
+                (replay-input remaining replaying?)
+                events   (parse-input-events (input :raw))
+                dir      (pick-direction events p1-direction)
+                pressed? (events-have? events l/key-space-hex)]
+            (when (and (not replaying?) (events-have? events l/key-p-hex))
               (wait-while-paused board)
               (r/render-obstacles obstacles)
               (when goal (r/render-goal goal))
@@ -187,7 +193,7 @@
                    :combo next-combo}
                   (tick {:snake snake :goal goal :config config
                          :obstacles obstacles :slow-ticks slow-ticks :combo combo}
-                        input accelerate-steps)
+                        dir pressed? accelerate-steps)
                   {:obstacles next-obs :level next-level :new-walls new-walls}
                   (maybe-level-up config next-snake obstacles next-goal level)]
               (when new-walls (r/render-obstacles new-walls))
