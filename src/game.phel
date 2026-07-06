@@ -25,6 +25,14 @@
 (defn- elapsed-secs [start-time]
   (int (php/round (- (php/microtime true) start-time))))
 
+(defn- sleep-remaining
+  "Sleep `target-us` minus the time already spent since `frame-start`, so
+  per-frame render cost (which grows with board/snake size) doesn't stretch
+  the frame period. Post-sleep work (clear/input/tick) is cheap and uncounted."
+  [frame-start target-us]
+  (let [spent-us (int (* 1000000 (- (php/microtime true) frame-start)))]
+    (php/usleep (max 0 (- target-us spent-us)))))
+
 (defn- initial-snake [{:board board}]
   (l/snake :right 0 (l/generate-snake-head board) []))
 
@@ -171,8 +179,9 @@
              initial?         true
              remaining        (if replay (replay :inputs) [])
              recorded         []]
-        (render-frame old-snake snake goal obstacles combo config start-time initial?)
-        (php/usleep (compute-delay snake config accelerate-steps slow-ticks))
+        (let [frame-start (php/microtime true)]
+          (render-frame old-snake snake goal obstacles combo config start-time initial?)
+          (sleep-remaining frame-start (compute-delay snake config accelerate-steps slow-ticks)))
         (gui/clear-output)
         (if (dead? board wrap? snake obstacles)
           {:snake snake :start-time start-time :seed seed
@@ -277,8 +286,9 @@
         s2-0                        (l/snake :left  0 {:x (- (board :width) 5) :y mid-y} [])
         goal0                       (l/generate-new-goal board s1-0 nil false)]
     (loop [old-s1 {} old-s2 {} s1 s1-0 s2 s2-0 goal goal0]
-      (render-two old-s1 old-s2 s1 s2 goal start-time)
-      (php/usleep delay-us)
+      (let [frame-start (php/microtime true)]
+        (render-two old-s1 old-s2 s1 s2 goal start-time)
+        (sleep-remaining frame-start delay-us))
       (gui/clear-output)
       (let [p1-dead? (two-dead? board wrap? s1 s2)
             p2-dead? (two-dead? board wrap? s2 s1)]
