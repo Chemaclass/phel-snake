@@ -11,6 +11,9 @@
 (def key->direction
   {:left :left :right :right :up :up :down :down})
 
+(def- opposite-direction
+  {:left :right :right :left :up :down :down :up})
+
 (def wasd->direction
   {"w" :up "s" :down "a" :left "d" :right})
 
@@ -34,9 +37,14 @@
     {:x (+ x dx) :y (+ y dy)}))
 
 (defn move-snake
-  "Advance the snake by one cell; preserves length. `next-direction` may be nil."
+  "Advance the snake by one cell; preserves length. `next-direction` may be
+  nil. A 180° reversal is ignored (keeps the current direction) — otherwise the
+  head would step onto its own neck and die, punishing the most natural input."
   [{:direction d :head head :tail tail :as s} next-direction]
-  (let [direction (or next-direction d)]
+  (let [direction (if (or (nil? next-direction)
+                          (= next-direction (opposite-direction d)))
+                    d
+                    next-direction)]
     (assoc s
            :direction direction
            :head      (step-head head direction)

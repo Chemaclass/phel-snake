@@ -37,8 +37,8 @@
   (let  [s (snake :right 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])]
     (is (= (snake :right 1 {:x 6 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
            (move-snake s nil)) "Keep the old direction if nil")
-    (is (= (snake :left 1 {:x 4 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
-           (move-snake s :left)))
+    (is (= (snake :right 1 {:x 6 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
+           (move-snake s :left)) "180° reversal ignored: keeps :right, no self-kill")
     (is (= (snake :right 1 {:x 6 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
            (move-snake s :right)))
     (is (= (snake :up 1 {:x 5 :y 4} [{:x 4 :y 5} {:x 5 :y 5}])
