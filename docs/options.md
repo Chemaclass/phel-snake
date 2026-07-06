@@ -30,6 +30,15 @@ vendor/bin/phel run src/main.phel [options]
 | `no-levels` | Disable level progression |
 | `level-every=N` | Goals needed per level (default 5) |
 
+## Startup
+
+| Option | Description |
+|--------|-------------|
+| `no-menu` | Skip the [start menu](controls.md) and launch straight into the game |
+
+By default a start menu appears first, pre-filled from any flags you
+passed; toggle options there and press Enter to play.
+
 ## Debug
 
 | Option | Description |

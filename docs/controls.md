@@ -1,5 +1,17 @@
 # Controls
 
+## Start menu
+
+Shown on launch unless `no-menu` is passed.
+
+| Key | Action |
+|-----|--------|
+| Number keys | Toggle the matching option |
+| Enter / Space | Start the game |
+| `Q` | Quit |
+
+## In game
+
 | Key | Action |
 |-----|--------|
 | Arrow keys | Move the snake (player 1 in two-player mode) |

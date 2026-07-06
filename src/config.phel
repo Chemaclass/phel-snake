@@ -3,7 +3,7 @@
 
 (def- default-width 42)
 (def- default-height 22)
-(def- default-obstacle-count 10)
+(def default-obstacle-count 10)
 (def- default-level-every 5)
 
 (defn- flag? [args name] (contains-value? args name))
@@ -29,4 +29,5 @@
      :obstacle-count  (obstacle-count args)
      :power-ups?      (not (flag? args "no-power-ups"))
      :levels?         (not (flag? args "no-levels"))
-     :level-every     (get-int-arg args "level-every" default-level-every)}))
+     :level-every     (get-int-arg args "level-every" default-level-every)
+     :menu?           (not (flag? args "no-menu"))}))
