@@ -11,12 +11,15 @@ obstacle ends the run.
 
 Two snakes share the same board. Player 1 drives with the arrow keys,
 player 2 with `WASD`. A single goal is shared — whoever eats it scores.
-A snake dies on walls (unless `wrap` is set), on self-collision, or
-when it runs into the opponent's body. The game ends as soon as either
-snake dies, and a P1/P2/Draw banner is shown.
+A snake dies on walls (unless `wrap` is set), on self-collision, on an
+obstacle, or when it runs into the opponent's body. The game ends as
+soon as either snake dies, and a P1/P2/Draw banner is shown.
 
-Power-ups, combos, and level walls are disabled in two-player mode to
-keep the match symmetric.
+Power-ups, obstacles, level walls, and pause all work in two-player, and
+each snake keeps its own combo chain. Shared effects (a slow power-up,
+obstacles, level walls) hit both players equally, so the match stays
+symmetric. The score-based speed-up is single-snake only and stays off
+here: both snakes advance on one shared tick.
 
 ```bash
 vendor/bin/phel run src/main.phel two-player

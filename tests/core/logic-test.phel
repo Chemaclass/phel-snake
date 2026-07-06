@@ -11,7 +11,9 @@
                                           goal-bonus
                                           obstacle-collision?
                                           opponent-collision?
-                                          on-any-cell?])
+                                          on-any-cell?
+                                          snake-cells
+                                          generate-obstacles-two])
   (:require phel\test :refer [deftest is]))
 
 (deftest test-step-head
@@ -141,6 +143,21 @@
   (is (false? (on-any-cell? [] {:x 1 :y 1})) "empty cells => miss")
   (is (true?  (on-any-cell? [{:x 1 :y 1}] {:x 1 :y 1})) "match")
   (is (false? (on-any-cell? [{:x 1 :y 1}] {:x 2 :y 1})) "miss"))
+
+(deftest test-snake-cells
+  (is (= [{:x 5 :y 5} {:x 4 :y 5} {:x 3 :y 5}]
+         (vec (snake-cells (snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}]))))
+      "head first, then the tail cells"))
+
+(deftest test-generate-obstacles-two-avoids-both
+  (php/mt_srand 1)
+  (let [board {:width 30 :height 20}
+        s1    (snake :right 0 {:x 5 :y 10} [])
+        s2    (snake :left  0 {:x 25 :y 10} [])
+        obs   (generate-obstacles-two board s1 s2 8)]
+    (is (= 8 (count obs)) "places the requested count on a roomy board")
+    (is (false? (on-any-cell? obs (s1 :head))) "never spawns on P1's head")
+    (is (false? (on-any-cell? obs (s2 :head))) "never spawns on P2's head")))
 
 (deftest test-advance-combo-expires
   (let [start              (advance-combo {:count 0 :ticks-left 0} true)

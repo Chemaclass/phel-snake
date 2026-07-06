@@ -81,6 +81,11 @@
   [{:head head :tail tail}]
   (reduce mark {(cell-key head) true} tail))
 
+(defn snake-cells
+  "Seq of `{:x :y}` cells the snake occupies (head first, then tail)."
+  [{:head head :tail tail}]
+  (cons head tail))
+
 (defn cells-set
   "Set of cells from a seq of `{:x :y}` cells."
   [cells]
@@ -186,12 +191,10 @@
       {:x (+ (head :x) (* i dx))
        :y (+ (head :y) (* i dy))})))
 
-(defn generate-obstacles
-  "Random obstacle cells in the play area, avoiding the snake and a short
-  corridor in front of it so spawning isn't an instant death."
-  [{:width w :height h :as board} s n]
-  (let [reserved (merge (occupied-set s) (cells-set (spawn-corridor s)))
-        limit    (* n obstacle-attempt-multiplier)]
+(defn- place-obstacles
+  "Place `n` random obstacle cells in the play area, avoiding `reserved`."
+  [{:width w :height h :as board} reserved n]
+  (let [limit (* n obstacle-attempt-multiplier)]
     (loop [obs [] blocked reserved attempts 0]
       (cond
         (= (count obs) n)   obs
@@ -202,6 +205,20 @@
                    (not (on-occupied? blocked pos)))
             (recur (conj obs pos) (mark blocked pos) 0)
             (recur obs blocked (inc attempts))))))))
+
+(defn- corridor-reserved [s]
+  (merge (occupied-set s) (cells-set (spawn-corridor s))))
+
+(defn generate-obstacles
+  "Random obstacle cells in the play area, avoiding the snake and a short
+  corridor in front of it so spawning isn't an instant death."
+  [board s n]
+  (place-obstacles board (corridor-reserved s) n))
+
+(defn generate-obstacles-two
+  "Obstacles avoiding both snakes and both spawn corridors."
+  [board s1 s2 n]
+  (place-obstacles board (merge (corridor-reserved s1) (corridor-reserved s2)) n))
 
 (def- wall-dirs [{:dx 1 :dy 0} {:dx -1 :dy 0} {:dx 0 :dy 1} {:dx 0 :dy -1}])
 

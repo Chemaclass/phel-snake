@@ -227,35 +227,66 @@
     p1-dead?                :p2
     :else                   :p1))
 
-(defn- two-dead? [board wrap? me other]
+(defn- two-dead? [board wrap? obstacles me other]
   (or (and (not wrap?) (l/collision-with-board? board me))
       (l/self-collision? me)
+      (l/obstacle-collision? obstacles me)
       (l/opponent-collision? me other)))
 
 (defn- advance-two
-  "Pure step: returns {:s1 :s2 :goal} after applying directions d1/d2."
-  [board wrap? s1 s2 goal d1 d2]
+  "Pure step for two-player. Applies directions d1/d2, resolves the shared goal
+  (P1 wins ties), advances each snake's own combo, applies the power-up bonus
+  and slow effect, and respawns the goal avoiding both snakes and obstacles.
+  Returns {:s1 :s2 :goal :combo1 :combo2 :slow-ticks}."
+  [{:board board :wrap? wrap? :power-ups? pu?} obstacles s1 s2 goal combo1 combo2 slow-ticks d1 d2]
   (let [s1-moved  (l/move-snake s1 d1)
         s2-moved  (l/move-snake s2 d2)
         g1?       (l/snake-reach-goal? s1-moved goal)
         g2?       (and (not g1?) (l/snake-reach-goal? s2-moved goal))
-        bump      (fn [s eaten?] (if eaten? (l/grow-snake (update s :score inc)) s))
+        bonus     (when (or g1? g2?) (l/goal-bonus (get goal :type :normal)))
+        next-c1   (l/advance-combo combo1 g1?)
+        next-c2   (l/advance-combo combo2 g2?)
+        eat       (fn [moved ate? combo]
+                    (if ate?
+                      (let [scored (update moved :score + (* (bonus :score-delta) (combo :multiplier)))]
+                        (if (bonus :grow?) (l/grow-snake scored) scored))
+                      moved))
         wrap      (fn [s] (if wrap? (l/wrap-head board s) s))
-        s1-final  (wrap (bump s1-moved g1?))
-        s2-final  (wrap (bump s2-moved g2?))
-        next-goal (if (or g1? g2?)
-                    (l/generate-new-goal board s1-final nil false)
+        s1-final  (wrap (eat s1-moved g1? next-c1))
+        s2-final  (wrap (eat s2-moved g2? next-c2))
+        ate?      (or g1? g2?)
+        next-goal (if ate?
+                    (l/generate-new-goal board s1-final
+                                         (concat (or obstacles []) (l/snake-cells s2-final)) pu?)
                     goal)]
-    {:s1 s1-final :s2 s2-final :goal next-goal}))
+    {:s1 s1-final :s2 s2-final :goal next-goal
+     :combo1 next-c1 :combo2 next-c2
+     :slow-ticks (advance-slow-ticks (when ate? bonus) slow-ticks)}))
 
-(defn- render-two [old-s1 old-s2 s1 s2 goal start-time]
+(defn- maybe-level-up-two
+  "Level walls for two-player, keyed off the higher of the two scores and
+  avoiding both snakes. Returns {:obstacles :level :new-walls}."
+  [{:levels? on? :board board :level-every every} s1 s2 obstacles goal level]
+  (if (and on? (>= (max (s1 :score) (s2 :score)) (* level every)))
+    (let [avoid (concat (or obstacles []) (l/snake-cells s2))
+          walls (l/spawn-wall-segment board s1 avoid goal wall-segment-length)]
+      (if (empty? walls)
+        {:obstacles obstacles             :level (inc level) :new-walls nil}
+        {:obstacles (into obstacles walls) :level (inc level) :new-walls walls}))
+    {:obstacles obstacles :level level :new-walls nil}))
+
+(defn- render-two
+  [old-s1 old-s2 s1 s2 goal obstacles start-time board combo1 combo2 initial? frame]
   (if (empty? old-s1)
     (r/render-snake s1 "snake-head" "snake-tail")
     (r/render-snake-delta old-s1 s1 "snake-head" "snake-tail"))
   (if (empty? old-s2)
     (r/render-snake s2 "snake2-head" "snake2-tail")
     (r/render-snake-delta old-s2 s2 "snake2-head" "snake2-tail"))
+  (when initial? (r/render-obstacles obstacles))
   (when goal (r/render-goal goal))
+  (r/render-combo board 2 "P1 " combo1 frame)
+  (r/render-combo board 3 "P2 " combo2 frame)
   (println (format "\nP1: %d  |  P2: %d" (s1 :score) (s2 :score)))
   (println (format "Time: %d secs" (elapsed-secs start-time))))
 
@@ -279,28 +310,42 @@
 (defn- run-two-player [config]
   (r/setup-styles)
   (r/render-board (config :board))
-  (let [{:board board :wrap? wrap?} config
-        start-time                  (php/microtime true)
-        delay-us                    (max two-player-min-delay-us base-delay-us)
-        mid-y                       (int (/ (board :height) 2))
-        s1-0                        (l/snake :right 0 {:x 5 :y mid-y} [])
-        s2-0                        (l/snake :left  0 {:x (- (board :width) 5) :y mid-y} [])
-        goal0                       (l/generate-new-goal board s1-0 nil false)]
-    (loop [old-s1 {} old-s2 {} s1 s1-0 s2 s2-0 goal goal0]
+  (let [{:board board :wrap? wrap? :obstacle-count obs-n :power-ups? pu?} config
+        start-time (php/microtime true)
+        delay-us   (max two-player-min-delay-us base-delay-us)
+        mid-y      (int (/ (board :height) 2))
+        s1-0       (l/snake :right 0 {:x 5 :y mid-y} [])
+        s2-0       (l/snake :left  0 {:x (- (board :width) 5) :y mid-y} [])
+        obstacles0 (if (pos? obs-n) (l/generate-obstacles-two board s1-0 s2-0 obs-n) [])
+        goal0      (l/generate-new-goal board s1-0 (l/snake-cells s2-0) pu?)]
+    (loop [old-s1 {} old-s2 {} s1 s1-0 s2 s2-0 goal goal0
+           obstacles obstacles0 combo1 initial-combo combo2 initial-combo
+           slow-ticks 0 level 1 initial? true frame 0]
       (let [frame-start (php/microtime true)]
-        (render-two old-s1 old-s2 s1 s2 goal start-time)
-        (sleep-remaining frame-start delay-us))
+        (render-two old-s1 old-s2 s1 s2 goal obstacles start-time board combo1 combo2 initial? frame)
+        (sleep-remaining frame-start (if (pos? slow-ticks) (* 2 delay-us) delay-us)))
       (gui/clear-output)
-      (let [p1-dead? (two-dead? board wrap? s1 s2)
-            p2-dead? (two-dead? board wrap? s2 s1)]
+      (let [p1-dead? (two-dead? board wrap? obstacles s1 s2)
+            p2-dead? (two-dead? board wrap? obstacles s2 s1)]
         (when (or p1-dead? p2-dead?)
           (finish-two board s1 s2 start-time (two-outcome p1-dead? p2-dead?)))
-        (let [events                                    (parse-input-events (get (gui/read-input 8) :raw))
-              d1                                        (pick-direction events p1-direction)
-              d2                                        (pick-direction events p2-direction)
-              {:s1 s1-next :s2 s2-next :goal goal-next}
-              (advance-two board wrap? s1 s2 goal d1 d2)]
-          (recur s1 s2 s1-next s2-next goal-next))))))
+        (let [events (parse-input-events (get (gui/read-input 8) :raw))
+              d1     (pick-direction events p1-direction)
+              d2     (pick-direction events p2-direction)]
+          (when (events-have? events l/key-p-hex)
+            (wait-while-paused board)
+            (r/render-obstacles obstacles)
+            (when goal (r/render-goal goal))
+            (r/render-snake s1 "snake-head" "snake-tail")
+            (r/render-snake s2 "snake2-head" "snake2-tail"))
+          (let [{:s1 s1-next :s2 s2-next :goal goal-next
+                 :combo1 c1-next :combo2 c2-next :slow-ticks slow-next}
+                (advance-two config obstacles s1 s2 goal combo1 combo2 slow-ticks d1 d2)
+                {:obstacles obs-next :level level-next :new-walls new-walls}
+                (maybe-level-up-two config s1-next s2-next obstacles goal-next level)]
+            (when new-walls (r/render-obstacles new-walls))
+            (recur s1 s2 s1-next s2-next goal-next
+                   obs-next c1-next c2-next slow-next level-next false (inc frame))))))))
 
 (defn run [config]
   (if (config :two-player?)
