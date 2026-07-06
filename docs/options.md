@@ -27,17 +27,8 @@ vendor/bin/phel run src/main.phel [options]
 | `wrap` | Snake wraps around walls instead of dying |
 | `obstacles[=N]` | Scatter N obstacles (default 10) on the board |
 | `no-power-ups` | Disable golden/slow-down goals |
-| `no-levels` | Disable level progression |
+| `levels` | Enable level progression (walls added as score climbs) |
 | `level-every=N` | Goals needed per level (default 5) |
-
-## Startup
-
-| Option | Description |
-|--------|-------------|
-| `no-menu` | Skip the [start menu](controls.md) and launch straight into the game |
-
-By default a start menu appears first, pre-filled from any flags you
-passed; toggle options there and press Enter to play.
 
 ## Debug
 

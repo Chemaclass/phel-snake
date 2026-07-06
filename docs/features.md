@@ -30,9 +30,8 @@ reserved so you don't die on the first tick.
 
 ## Level progression
 
-Every `level-every` goals (default 5), a new 3-cell wall segment is
-added to the board, slowly increasing difficulty. Disable with
-`no-levels`.
+Enable with `levels`: every `level-every` goals (default 5), a new
+3-cell wall segment is added to the board, slowly increasing difficulty.
 
 ## Wrap-around
 

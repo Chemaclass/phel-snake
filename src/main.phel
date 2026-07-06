@@ -1,8 +1,6 @@
 (ns phel-snake\main
   (:require [phel-snake\config :refer [parse-config]]
-            [phel-snake\core\menu :as menu]
             [phel-snake\game :as game]))
 
 (when-not *build-mode*
-  (let [config (parse-config argv)]
-    (game/run (if (config :menu?) (menu/show-menu config) config))))
+  (game/run (parse-config argv)))

@@ -12,7 +12,7 @@
     (is (false? (c :god-mode?)))
     (is (false? (c :two-player?)))
     (is (true?  (c :power-ups?)))
-    (is (true?  (c :levels?)))
+    (is (false? (c :levels?)) "level walls are opt-in")
     (is (= 5 (c :level-every)))
     (is (= 0 (c :obstacle-count)) "no obstacles unless requested")))
 
@@ -28,11 +28,11 @@
     (is (= 10 (c :obstacle-count)) "bare `obstacles` flag picks default count")))
 
 (deftest test-parse-config-flags
-  (let [c (parse-config ["debug" "god-mode" "wrap" "no-power-ups" "no-levels" "two-player"])]
+  (let [c (parse-config ["debug" "god-mode" "wrap" "no-power-ups" "levels" "two-player"])]
     (is (true?  (c :debug?)))
     (is (true?  (c :god-mode?)))
     (is (false? (c :variable-speed?)) "god-mode disables variable-speed")
     (is (true?  (c :wrap?)))
     (is (false? (c :power-ups?)))
-    (is (false? (c :levels?)))
+    (is (true?  (c :levels?)) "the `levels` flag enables level walls")
     (is (true?  (c :two-player?)))))

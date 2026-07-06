@@ -28,6 +28,5 @@
      :two-player?     (flag? args "two-player")
      :obstacle-count  (obstacle-count args)
      :power-ups?      (not (flag? args "no-power-ups"))
-     :levels?         (not (flag? args "no-levels"))
-     :level-every     (get-int-arg args "level-every" default-level-every)
-     :menu?           (not (flag? args "no-menu"))}))
+     :levels?         (flag? args "levels")
+     :level-every     (get-int-arg args "level-every" default-level-every)}))
