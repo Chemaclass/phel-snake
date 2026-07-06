@@ -85,8 +85,6 @@
   (when initial? (r/render-obstacles obstacles))
   (when goal (r/render-goal goal))
   (r/render-stats snake start-time)
-  (when (> (combo :count) 1)
-    (println (format "Combo: x%d" (combo :multiplier))))
   (when (config :debug?)
     (println (format "; direction: %s  god-mode?: %s"
                      (snake :direction)
@@ -178,9 +176,12 @@
              level            1
              initial?         true
              remaining        (if replay (replay :inputs) [])
-             recorded         []]
+             recorded         []
+             frame            0]
         (let [frame-start (php/microtime true)]
           (render-frame old-snake snake goal obstacles combo config start-time initial?)
+          (r/render-boost board frame accelerate-steps)
+          (r/render-combo board 4 "" combo frame)
           (sleep-remaining frame-start (compute-delay snake config accelerate-steps slow-ticks)))
         (gui/clear-output)
         (if (dead? board wrap? snake obstacles)
@@ -208,7 +209,7 @@
               (when new-walls (r/render-obstacles new-walls))
               (recur snake next-snake next-goal next-obs
                      next-accel next-slow next-combo next-level false
-                     next-remaining (push recorded (input :hex))))))))))
+                     next-remaining (push recorded (input :hex)) (inc frame)))))))))
 
 (defn- run-single-player [config]
   (loop [replay nil]

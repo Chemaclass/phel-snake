@@ -14,7 +14,10 @@
    ["goal"        "magenta" bold-black]
    ["goal-golden" "yellow"  bold-black]
    ["goal-slow"   "cyan"    bold-black]
-   ["obstacle"    "blue"    bold-white]])
+   ["obstacle"    "blue"    bold-white]
+   ["combo"       "yellow"  bold-black]
+   ["combo-hot"   "red"     bold-white]
+   ["boost"       "green"   bold-white]])
 
 (defn setup-styles []
   (for [[name bg base] :in styles]
@@ -76,6 +79,34 @@
   (println (format "Length: %d" (inc (count (s :tail)))))
   (println (format "Time: %d secs"
                    (php/round (- (php/microtime true) start-time)))))
+
+(def- hud-margin 3)
+
+(defn- hud-line
+  "Paints a HUD row just right of the board. This sits above the stats cursor,
+  so `clear-output` never wipes it — callers repaint it (blanks included) every
+  frame to avoid stale text."
+  [board row text style]
+  (gui/render (+ (board :width) hud-margin) row text style))
+
+(defn render-boost
+  "Accelerate-burst indicator; blinks on `frame` parity while active."
+  [board frame accelerate-steps]
+  (hud-line board 2
+            (cond (not (pos? accelerate-steps)) "           "
+                  (even? frame)                 ">> BOOST >>"
+                  :else                         "   boost   ")
+            (if (pos? accelerate-steps) "boost" "")))
+
+(defn render-combo
+  "Combo-chain indicator at `row`; blinks between combo/combo-hot while a chain
+  (multiplier > 1) is live. `label` prefixes it (e.g. \"P1\"), or \"\" for none."
+  [board row label combo frame]
+  (if (> (combo :count) 1)
+    (hud-line board row
+              (format "%sCOMBO x%d " label (combo :multiplier))
+              (if (even? frame) "combo-hot" "combo"))
+    (hud-line board row "                 " "")))
 
 (defn render-game-over [board s]
   (let [text "GAME OVER"
