@@ -1,10 +1,9 @@
-(ns phel-snake\util)
+(ns phel-snake.util)
 
 (defn get-int-arg
   "Returns the int value of `key=N` in args, or default if absent."
   [args key default]
-  (let [prefix (str key "=")
-        arg    (find #(php/str_starts_with (or % "") prefix) args)]
-    (if (empty? arg)
-      default
-      (int (nth (php/explode "=" arg) 1)))))
+  (let [prefix (str key "=")]
+    (if-let [arg (find #(php/str_starts_with % prefix) args)]
+      (php/intval (php/substr arg (php/strlen prefix)))
+      default)))

@@ -1,5 +1,5 @@
-(ns phel-snake\config
-  (:require [phel-snake\util :refer [get-int-arg]]))
+(ns phel-snake.config
+  (:require [phel-snake.util :refer [get-int-arg]]))
 
 (def- default-width 42)
 (def- default-height 22)

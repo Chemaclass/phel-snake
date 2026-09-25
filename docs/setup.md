@@ -9,7 +9,7 @@ docker exec -it phel_snake ./tools/composer play
 
 ## Local
 
-Requires PHP `>=8.3`
+Requires PHP `>=8.5`
 ([linux](https://github.com/phpbrew/phpbrew) |
 [Mac](https://github.com/shivammathur/homebrew-php)).
 

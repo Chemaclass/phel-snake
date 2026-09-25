@@ -1,0 +1,114 @@
+(ns phel-snake-tests.core.engine-test
+  (:require [phel-snake.core.engine :as e]
+            [phel-snake.core.logic :as l]
+            [phel-snake.core.speed :as speed]
+            [phel.test :refer [deftest is]]))
+
+(def- config
+  {:board           {:width 20 :height 12}
+   :wrap?           false
+   :power-ups?      false
+   :levels?         false
+   :level-every     5
+   :obstacle-count  0
+   :variable-speed? true
+   :two-player?     false})
+
+(defn- player [snake] {:snake snake :combo e/initial-combo})
+
+(defn- state [snakes goal-pos]
+  {:players          (mapv player snakes)
+   :obstacles        #{}
+   :goal             {:pos goal-pos :type :normal}
+   :slow-ticks       0
+   :accelerate-steps 0
+   :level            1
+   :frame            0})
+
+(defn- snake-at [state i] (get-in state [:players i :snake]))
+
+(deftest test-init-state-solo
+  (php/mt_srand 1)
+  (let [s (e/init-state (assoc config :obstacle-count 4))]
+    (is (e/solo? s))
+    (is (= 4 (count (:obstacles s))))
+    (is (some? (:goal s)))
+    (is (nil? (e/outcome config s)) "a fresh game is alive")))
+
+(deftest test-init-state-duel
+  (php/mt_srand 1)
+  (let [s (e/init-state (assoc config :two-player? true))]
+    (is (false? (e/solo? s)))
+    (is (= [:right :left] (mapv :direction (e/snakes s))) "the snakes face each other")))
+
+(deftest test-tick-moves-without-eating
+  (php/mt_srand 1)
+  (let [next (e/tick config (state [(l/->Snake :right 0 {:x 5 :y 5} [{:x 4 :y 5}])] {:x 15 :y 5}) [nil] false)]
+    (is (= {:x 6 :y 5} (:head (snake-at next 0))))
+    (is (= 1 (count (:tail (snake-at next 0)))) "length unchanged")
+    (is (= {:x 15 :y 5} (get-in next [:goal :pos])) "goal stays")
+    (is (= 1 (:frame next)))))
+
+(deftest test-tick-eats-goal
+  (php/mt_srand 1)
+  (let [next  (e/tick config (state [(l/->Snake :right 0 {:x 5 :y 5} [{:x 4 :y 5}])] {:x 6 :y 5}) [nil] false)
+        snake (snake-at next 0)]
+    (is (= {:x 6 :y 5} (:head snake)) "moves exactly one cell onto the goal")
+    (is (= [{:x 4 :y 5} {:x 5 :y 5}] (:tail snake)) "grows by one")
+    (is (= 1 (:score snake)))
+    (is (not= {:x 6 :y 5} (get-in next [:goal :pos])) "a new goal spawns")
+    (is (false? (l/on-snake? snake (get-in next [:goal :pos]))) "never under the snake")))
+
+(deftest test-tick-turns
+  (php/mt_srand 1)
+  (let [next (e/tick config (state [(l/->Snake :right 0 {:x 5 :y 5} [])] {:x 15 :y 9}) [:down] false)]
+    (is (= {:x 5 :y 6} (:head (snake-at next 0))))))
+
+(deftest test-tick-duel-tie-goes-to-p1
+  (php/mt_srand 1)
+  (let [duel (assoc config :two-player? true)
+        next (e/tick duel
+                     (state [(l/->Snake :right 0 {:x 5 :y 5} []) (l/->Snake :left 0 {:x 7 :y 5} [])] {:x 6 :y 5})
+                     [nil nil]
+                     false)]
+    (is (= 1 (:score (snake-at next 0))) "P1 eats")
+    (is (= 0 (:score (snake-at next 1))) "P2 doesn't")))
+
+(deftest test-tick-accelerate
+  (php/mt_srand 1)
+  (let [next (e/tick config (state [(l/->Snake :right 0 {:x 5 :y 5} [])] {:x 15 :y 9}) [nil] true)]
+    (is (= speed/accelerate-window (:accelerate-steps next)))
+    (is (= 0 (e/frame-delay config next)) "a burst runs at full speed")))
+
+(deftest test-tick-levels-add-walls
+  (php/mt_srand 1)
+  (let [levels (assoc config :levels? true :level-every 1)
+        next   (e/tick levels (state [(l/->Snake :right 0 {:x 5 :y 5} [])] {:x 6 :y 5}) [nil] false)]
+    (is (= 2 (:level next)))
+    (is (= 3 (count (:obstacles next))) "one 3-cell wall segment")))
+
+(deftest test-outcome-solo
+  (is (= :game-over (e/outcome config (state [(l/->Snake :right 0 {:x 20 :y 5} [])] {:x 6 :y 5}))) "wall")
+  (is (= :game-over (e/outcome config (state [(l/->Snake :right 0 {:x 5 :y 5} [{:x 5 :y 5}])] {:x 6 :y 5}))) "self")
+  (is (= :game-over (e/outcome config (assoc (state [(l/->Snake :right 0 {:x 5 :y 5} [])] {:x 6 :y 5})
+                                             :obstacles #{{:x 5 :y 5}})))
+      "obstacle")
+  (is (nil? (e/outcome (assoc config :wrap? true) (state [(l/->Snake :right 0 {:x 5 :y 5} [])] {:x 6 :y 5})))))
+
+(deftest test-outcome-duel
+  (let [p1 (l/->Snake :right 0 {:x 5 :y 5} [{:x 4 :y 5}])]
+    (is (= :p1 (e/outcome config (state [p1 (l/->Snake :left 0 {:x 4 :y 5} [])] {:x 9 :y 9})))
+        "P2 ran into P1's tail")
+    (is (= :draw (e/outcome config (state [p1 (l/->Snake :left 0 {:x 5 :y 5} [])] {:x 9 :y 9})))
+        "head-on")
+    (is (nil? (e/outcome config (state [p1 (l/->Snake :left 0 {:x 9 :y 5} [])] {:x 9 :y 9}))))))
+
+(deftest test-frame-delay
+  (let [snake (l/->Snake :up 0 {:x 5 :y 5} [])]
+    (is (= speed/base-delay-us (e/frame-delay config (state [snake] {:x 1 :y 1}))))
+    (is (= speed/base-delay-us
+           (e/frame-delay config (state [(assoc snake :score 10) snake] {:x 1 :y 1})))
+        "a duel ignores the score ramp")
+    (is (= (* 2 speed/base-delay-us)
+           (e/frame-delay config (assoc (state [snake] {:x 1 :y 1}) :slow-ticks 3)))
+        "slow power-up doubles it")))

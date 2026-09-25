@@ -1,40 +1,30 @@
-(ns phel-snake-tests\core\input-test
-  (:require phel-snake\core\input :refer [parse-input-events pick-direction])
-  (:require phel\test :refer [deftest is]))
+(ns phel-snake-tests.core.input-test
+  (:require [phel-snake.core.input :as input]
+            [phel.test :refer [deftest is]]))
 
-(deftest test-parse-input-events-empty
-  (is (= [] (parse-input-events "")) "empty buffer => no events")
-  (is (= [] (parse-input-events nil)) "nil buffer => no events"))
+(deftest test-split-keys
+  (is (= [] (input/split-keys "")) "empty buffer => no keys")
+  (is (= ["w"] (input/split-keys "w")))
+  (is (= ["\e[A"] (input/split-keys "\e[A")) "3-byte CSI sequence is one key")
+  (is (= ["w" "\e[C" "s"] (input/split-keys "w\e[Cs")))
+  (is (= ["\e" "["] (input/split-keys "\e[")) "a truncated sequence splits into bytes"))
 
-(deftest test-parse-input-events-single
-  (let [events (parse-input-events "w")]
-    (is (= 1 (count events)))
-    (is (= "w" (get (first events) :raw)))
-    (is (= "77" (get (first events) :hex)))))
+(deftest test-last-direction
+  (is (nil? (input/last-direction input/wasd-directions [])) "no keys => nil")
+  (is (= :left (input/last-direction input/wasd-directions ["w" "s" "a"])) "last direction wins")
+  (is (= :up (input/last-direction input/wasd-directions ["w" "x" "?"])) "unmapped keys don't overwrite"))
 
-(deftest test-parse-input-events-arrow
-  (let [arrow  (php/hex2bin "1b5b41")
-        events (parse-input-events arrow)]
-    (is (= 1 (count events)) "3-byte CSI sequence is one event")
-    (is (= "1b5b41" (get (first events) :hex)))))
+(deftest test-directions
+  (let [keys (input/split-keys "\e[Bd")]
+    (is (= [:down] (input/directions 1 keys)) "solo reads the arrows only")
+    (is (= [:down :right] (input/directions 2 keys)) "P2 reads WASD")))
 
-(deftest test-parse-input-events-mixed
-  (let [buf    (str "w" (php/hex2bin "1b5b43") "s")
-        events (parse-input-events buf)]
-    (is (= 3 (count events)))
-    (is (= "77" (get (get events 0) :hex)))
-    (is (= "1b5b43" (get (get events 1) :hex)))
-    (is (= "73" (get (get events 2) :hex)))))
+(deftest test-pressed?
+  (is (true? (input/pressed? ["a" " "] input/accelerate-key)))
+  (is (false? (input/pressed? ["a"] input/pause-key))))
 
-(deftest test-pick-direction-empty
-  (is (nil? (pick-direction [] (fn [_] :up))) "no events => nil"))
-
-(deftest test-pick-direction-last-wins
-  (let [events [{:raw "w"} {:raw "s"} {:raw "a"}]
-        key-fn (fn [e] (get {"w" :up "s" :down "a" :left "d" :right} (e :raw)))]
-    (is (= :left (pick-direction events key-fn)) "last matching direction wins")))
-
-(deftest test-pick-direction-skips-nil
-  (let [events [{:raw "w"} {:raw "x"} {:raw "?"}]
-        key-fn (fn [e] (get {"w" :up} (e :raw)))]
-    (is (= :up (pick-direction events key-fn)) "nil events don't overwrite the accumulator")))
+(deftest test-replay-key?
+  (is (true? (input/replay-key? "r")))
+  (is (true? (input/replay-key? "R")))
+  (is (false? (input/replay-key? "x")))
+  (is (false? (input/replay-key? nil))))

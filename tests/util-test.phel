@@ -1,6 +1,6 @@
-(ns phel-snake-tests\util-test
-  (:require phel-snake\util :refer [get-int-arg])
-  (:require phel\test :refer [deftest is]))
+(ns phel-snake-tests.util-test
+  (:require [phel-snake.util :refer [get-int-arg]]
+            [phel.test :refer [deftest is]]))
 
 (deftest test-get-int-arg
   (is (= 10 (get-int-arg [] "key" 10)) "empty args results in default value")

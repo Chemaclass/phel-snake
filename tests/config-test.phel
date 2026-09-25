@@ -1,6 +1,6 @@
-(ns phel-snake-tests\config-test
-  (:require phel-snake\config :refer [parse-config])
-  (:require phel\test :refer [deftest is]))
+(ns phel-snake-tests.config-test
+  (:require [phel-snake.config :refer [parse-config]]
+            [phel.test :refer [deftest is]]))
 
 (deftest test-parse-config-defaults
   (let [c (parse-config [])]

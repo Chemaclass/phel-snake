@@ -8,15 +8,18 @@
     ],
     "license": "MIT",
     "require": {
-        "php": ">=8.3",
+        "php": ">=8.5",
         "ext-readline": "*",
-        "phel-lang/phel-lang": "^0.34",
-        "chemaclass/phel-cli-gui": "^0.9"
+        "phel-lang/phel-lang": "^0.53"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
     },
-    "minimum-stability": "dev",
+    "suggest": {
+        "ext-pcntl": "Restores the terminal when the game is interrupted with Ctrl-C"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
     "scripts": {
         "start": [
             "@build",
@@ -25,12 +28,26 @@
         "build": "vendor/bin/phel build --no-cache",
         "play": "php out/main.php",
         "test": "vendor/bin/phel test",
-        "format": "vendor/bin/phel format src tests"
+        "lint": "vendor/bin/phel lint src tests",
+        "format": "vendor/bin/phel format src tests",
+        "format-check": "vendor/bin/phel format src tests --dry-run",
+        "ci": [
+            "@format-check",
+            "@lint",
+            "@test"
+        ],
+        "agents-install": "vendor/bin/phel agent-install claude -n --quiet --force",
+        "post-install-cmd": [
+            "@agents-install"
+        ],
+        "post-update-cmd": [
+            "@agents-install"
+        ]
     },
     "config": {
         "preferred-install": "dist",
         "platform": {
-            "php": "8.3"
+            "php": "8.5"
         }
     }
 }

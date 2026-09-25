@@ -1,9 +1,10 @@
-(ns phel-snake-tests\core\speed-test
-  (:require phel-snake\core\speed :refer [compute-delay
-                                          base-delay-us
-                                          min-delay-us
-                                          difficulty-scale])
-  (:require phel\test :refer [deftest is]))
+(ns phel-snake-tests.core.speed-test
+  (:require [phel-snake.core.speed :refer [compute-delay
+                                           base-delay-us
+                                           min-delay-us
+                                           difficulty-scale
+                                           advance-accelerate]]
+            [phel.test :refer [deftest is]]))
 
 (def- variable-cfg {:variable-speed? true})
 (def- fixed-cfg {:variable-speed? false})
@@ -24,7 +25,7 @@
   (let [vert  (compute-delay (snake :up 0) variable-cfg 0 0)
         horiz (compute-delay (snake :right 0) variable-cfg 0 0)]
     (is (= base-delay-us vert) "vertical uses full base")
-    (is (= (int (/ base-delay-us 2)) horiz) "horizontal halves delay")))
+    (is (= (php/intdiv base-delay-us 2) horiz) "horizontal halves delay")))
 
 (deftest test-compute-delay-score-scales
   (let [d0 (compute-delay (snake :up 0) variable-cfg 0 0)
@@ -39,3 +40,8 @@
 (deftest test-compute-delay-score-clamped
   (let [huge (compute-delay (snake :up 1000) variable-cfg 0 0)]
     (is (= min-delay-us huge) "delay bottoms out at the min floor, not zero")))
+
+(deftest test-advance-accelerate
+  (is (= 3 (advance-accelerate true 0)) "pressing refills the burst")
+  (is (= 1 (advance-accelerate false 2)) "burst drains one step per tick")
+  (is (= 0 (advance-accelerate false 0)) "stays at zero"))

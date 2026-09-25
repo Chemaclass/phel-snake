@@ -1,28 +1,41 @@
-(ns phel-snake\core\input
-  (:require [phel-cli-gui\terminal-gui :as gui]
-            [phel-snake\core\logic :as l]))
+(ns phel-snake.core.input)
 
-(defn parse-input-events
-  "Break a raw input buffer into key events. Arrow keys are 3-byte CSI
-  sequences starting with ESC [ (hex 1b5b); other keys are single bytes."
-  [raw]
-  (loop [buf (or raw "") events []]
-    (if (= "" buf)
-      events
-      (let [esc?  (and (>= (php/strlen buf) 3)
-                       (= "1b5b" (php/bin2hex (php/substr buf 0 2))))
-            take  (if esc? 3 1)
-            chunk (php/substr buf 0 take)]
-        (recur (php/substr buf take)
-               (push events {:raw chunk :hex (php/bin2hex chunk)}))))))
+(def arrow-directions
+  {"\e[A" :up "\e[B" :down "\e[C" :right "\e[D" :left})
 
-(defn pick-direction
-  "Return the last direction produced by `key-fn` over `events`, or nil."
-  [events key-fn]
-  (reduce (fn [acc evt] (or (key-fn evt) acc)) nil events))
+(def wasd-directions
+  {"w" :up "s" :down "a" :left "d" :right})
 
-(defn p1-direction [evt]
-  (l/key->direction (gui/parse-key evt)))
+(def player-controls [arrow-directions wasd-directions])
 
-(defn p2-direction [evt]
-  (get l/wasd->direction (evt :raw)))
+(def accelerate-key " ")
+(def pause-key "p")
+
+(defn split-keys
+  "Splits a raw stdin buffer into keys: a 3-byte CSI sequence (ESC [ x, the
+  arrows) or a single byte."
+  [^string raw]
+  (let [len (php/strlen raw)]
+    (loop [i 0 keys []]
+      (if (>= i len)
+        keys
+        (let [n (if (and (<= (+ i 3) len) (= "\e[" (php/substr raw i 2))) 3 1)]
+          (recur (+ i n) (conj keys (php/substr raw i n))))))))
+
+(defn pressed?
+  "True when `key` is among `keys`."
+  [keys key]
+  (boolean (some #(= key %) keys)))
+
+(defn replay-key? [key]
+  (or (= "r" key) (= "R" key)))
+
+(defn last-direction
+  "The last direction `controls` maps from `keys`, or nil."
+  [controls keys]
+  (last (keep controls keys)))
+
+(defn directions
+  "Each player's requested direction, reading its own controls."
+  [player-count keys]
+  (mapv #(last-direction % keys) (take player-count player-controls)))

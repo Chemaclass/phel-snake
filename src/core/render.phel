@@ -1,118 +1,155 @@
-(ns phel-snake\core\render
-  (:require [phel-cli-gui\terminal-gui :as gui]))
+(ns phel-snake.core.render
+  (:require [phel.string :as s]))
 
-(def- border-style {:horizontal "---" :vertical "|" :corner "+"})
-
-(def- bold-black {:foreground "black" :options ["bold"]})
-(def- bold-white {:foreground "white" :options ["bold"]})
+(def- reset "\e[0m")
+(def- erase-to-eol "\e[K")
+(def- erase-below "\e[J")
+(def- clear-screen "\e[2J")
 
 (def- styles
-  [["snake-head"  "red"     bold-black]
-   ["snake-tail"  "green"   bold-black]
-   ["snake2-head" "magenta" bold-black]
-   ["snake2-tail" "cyan"    bold-black]
-   ["goal"        "magenta" bold-black]
-   ["goal-golden" "yellow"  bold-black]
-   ["goal-slow"   "cyan"    bold-black]
-   ["obstacle"    "blue"    bold-white]
-   ["combo"       "yellow"  bold-black]
-   ["combo-hot"   "red"     bold-white]
-   ["boost"       "green"   bold-white]])
+  {:snake-head  "\e[1;30;41m"
+   :snake-tail  "\e[1;30;42m"
+   :snake2-head "\e[1;30;45m"
+   :snake2-tail "\e[1;30;46m"
+   :goal        "\e[1;30;45m"
+   :goal-golden "\e[1;30;43m"
+   :goal-slow   "\e[1;30;46m"
+   :obstacle    "\e[1;37;44m"
+   :combo       "\e[1;30;43m"
+   :combo-hot   "\e[1;37;41m"
+   :boost       "\e[1;37;42m"})
 
-(defn setup-styles []
-  (for [[name bg base] :in styles]
-    (gui/add-output-formatter (merge base {:style-name name :background bg}))))
+(def- snake-styles
+  [[:snake-head :snake-tail] [:snake2-head :snake2-tail]])
 
-(defn render-board [board]
-  (gui/clear-screen)
-  (gui/render-board board border-style))
-
-(defn- paint [{:x x :y y} char style]
-  (gui/render x y char style))
-
-(defn render-snake
-  ([s] (render-snake s "snake-head" "snake-tail"))
-  ([s head-style tail-style]
-   (for [t :in (s :tail)]
-     (paint t " " tail-style))
-   (paint (s :head) " " head-style)))
-
-(defn- same-cell? [{:x ax :y ay} {:x bx :y by}]
-  (and (= ax bx) (= ay by)))
-
-(defn render-snake-delta
-  "Clears the dropped tail tip, repaints the old head as tail, draws the new
-  head. O(1) per frame instead of O(length)."
-  ([old-snake new-snake] (render-snake-delta old-snake new-snake "snake-head" "snake-tail"))
-  ([old-snake new-snake head-style tail-style]
-   (let [old-tail (old-snake :tail)
-         old-head (old-snake :head)
-         new-head (new-snake :head)]
-     (when-first [dropped old-tail]
-                 (when-not (same-cell? dropped new-head)
-                   (gui/render (dropped :x) (dropped :y) " ")))
-     (when old-head
-       (paint old-head " " tail-style))
-     (paint new-head " " head-style))))
-
-(defn- goal-style [goal]
-  (case (get goal :type :normal)
-    :golden "goal-golden"
-    :slow   "goal-slow"
-    "goal"))
-
-(defn- goal-char [goal]
-  (case (get goal :type :normal)
-    :golden "$"
-    :slow   "~"
-    " "))
-
-(defn render-goal [goal]
-  (paint goal (goal-char goal) (goal-style goal)))
-
-(defn render-obstacles [obstacles]
-  (for [o :in (or obstacles [])]
-    (paint o " " "obstacle")))
-
-(defn render-stats [s start-time]
-  (println (format "\nScore: %d" (s :score)))
-  (println (format "Length: %d" (inc (count (s :tail)))))
-  (println (format "Time: %d secs"
-                   (php/round (- (php/microtime true) start-time)))))
+(def- goal-looks
+  {:golden ["$" :goal-golden]
+   :slow   ["~" :goal-slow]
+   :normal [" " :goal]})
 
 (def- hud-margin 3)
+(def- message-gap 5)
 
-(defn- hud-line
-  "Paints a HUD row just right of the board. This sits above the stats cursor,
-  so `clear-output` never wipes it — callers repaint it (blanks included) every
-  frame to avoid stale text."
-  [board row text style]
-  (gui/render (+ (board :width) hud-margin) row text style))
+(defn ^string move-to
+  "CUP escape for board cell (x, y). Columns and rows count from 1 on the
+  terminal; x 0 and 1 share the left border column."
+  [^int x ^int y]
+  (php/sprintf "\e[%d;%dH" (inc y) (if (< x 1) 1 x)))
 
-(defn render-boost
-  "Accelerate-burst indicator; blinks on `frame` parity while active."
-  [board frame accelerate-steps]
-  (hud-line board 2
-            (cond (not (pos? accelerate-steps)) "           "
-                  (even? frame)                 ">> BOOST >>"
-                  :else                         "   boost   ")
-            (if (pos? accelerate-steps) "boost" "")))
+(defn- styled [style text]
+  (if style (str (styles style) text reset) text))
 
-(defn render-combo
-  "Combo-chain indicator at `row`; blinks between combo/combo-hot while a chain
-  (multiplier > 1) is live. `label` prefixes it (e.g. \"P1\"), or \"\" for none."
-  [board row label combo frame]
-  (if (> (combo :count) 1)
-    (hud-line board row
-              (format "%sCOMBO x%d " label (combo :multiplier))
-              (if (even? frame) "combo-hot" "combo"))
-    (hud-line board row "                 " "")))
+(defn- cell [{:keys [x y]} glyph style]
+  (str (move-to x y) (styled style glyph)))
 
-(defn render-game-over [board s]
-  (let [text "GAME OVER"
-        x    (int (php/round (- (/ (board :width) 2)
-                                (/ (php/strlen text) 2))))
-        y    (int (php/round (/ (board :height) 2)))]
-    (render-snake s)
-    (gui/render x y text)
-    (gui/render x (inc y) (format "Score: %d" (s :score)))))
+(defn- blank [pos]
+  (cell pos " " nil))
+
+(defn- line-at [x y text]
+  (str (move-to x y) text erase-to-eol))
+
+(defn- board-rows [{w :width h :height}]
+  (let [edge (str "+" (php/str_repeat "-" (- w 2)) "+")
+        body (str "|" (php/str_repeat " " (- w 2)) "|")]
+    (s/join (map-indexed (fn [y row] (str (move-to 1 y) row))
+                         (concat [edge] (repeat (- h 2) body) [edge])))))
+
+(defn- paint-snake [{:keys [head tail]} [head-style tail-style]]
+  (str (s/join (mapv #(cell % " " tail-style) tail))
+       (cell head " " head-style)))
+
+(defn- paint-obstacles [obstacles]
+  (s/join (mapv #(cell % " " :obstacle) obstacles)))
+
+(defn- paint-goal [goal]
+  (when goal
+    (let [[glyph style] (goal-looks (:type goal))]
+      (cell (:pos goal) glyph style))))
+
+(defn- dropped-tip
+  "The tail cell a move vacated, or nil when the snake grew."
+  [old new]
+  (when (= (count (:tail old)) (count (:tail new)))
+    (first (:tail old))))
+
+(defn- snake-delta
+  "Repaints only the old head (now tail) and the new head. O(1) per frame."
+  [old new [head-style tail-style]]
+  (str (cell (:head old) " " tail-style)
+       (cell (:head new) " " head-style)))
+
+(defn- full-paint [board {:keys [players obstacles]}]
+  (str clear-screen
+       (board-rows board)
+       (paint-obstacles obstacles)
+       (s/join (map-indexed (fn [i p] (paint-snake (:snake p) (snake-styles i))) players))))
+
+(defn- changes
+  "Every tip is cleared before any head is painted, so one snake's vacated cell
+  never erases another's head."
+  [prev {:keys [players obstacles]}]
+  (let [pairs (mapv vector (:players prev) players)]
+    (str (s/join (keep (fn [[o n]] (some-> (dropped-tip (:snake o) (:snake n)) blank)) pairs))
+         (when-not (identical? obstacles (:obstacles prev)) (paint-obstacles obstacles))
+         (s/join (map-indexed (fn [i [o n]] (snake-delta (:snake o) (:snake n) (snake-styles i))) pairs)))))
+
+(defn- hud-line [{w :width} row text style]
+  (line-at (+ w hud-margin) row (styled style text)))
+
+(defn- boost-line [board frame accelerate-steps]
+  (cond
+    (not (pos? accelerate-steps)) (hud-line board 2 "" nil)
+    (even? frame)                 (hud-line board 2 ">> BOOST >>" :boost)
+    :else                         (hud-line board 2 "   boost   " :boost)))
+
+(defn- combo-line [board row label {n :count m :multiplier} frame]
+  (if (> n 1)
+    (hud-line board row (str label "COMBO x" m " ") (if (even? frame) :combo-hot :combo))
+    (hud-line board row "" nil)))
+
+(defn- hud [board {:keys [players frame] accel :accelerate-steps}]
+  (if (= 1 (count players))
+    (str (boost-line board frame accel)
+         (combo-line board 4 "" (:combo (first players)) frame))
+    (s/join (map-indexed (fn [i p] (combo-line board (+ 2 i) (str "P" (inc i) " ") (:combo p) frame))
+                         players))))
+
+(defn- stats-lines [{:keys [debug? god-mode?]} {:keys [players]} elapsed]
+  (let [time-line (str "Time: " elapsed " secs")]
+    (if (= 1 (count players))
+      (let [snake (:snake (first players))]
+        (cond-> [(str "Score: " (:score snake))
+                 (str "Length: " (inc (count (:tail snake))))
+                 time-line]
+                debug? (conj (format "; direction: %s  god-mode?: %s" (name (:direction snake)) (str god-mode?)))))
+      [(s/join "  |  " (map-indexed (fn [i p] (str "P" (inc i) ": " (get-in p [:snake :score]))) players))
+       time-line])))
+
+(defn- rows-below [{h :height} first-row lines]
+  (s/join (map-indexed (fn [i text] (line-at 1 (+ h first-row i) text)) lines)))
+
+(defn frame
+  "ANSI for one frame: a full paint when `prev` is nil, otherwise only the
+  cells that changed since `prev`. HUD and stats repaint every frame."
+  [{:keys [board] :as config} prev state elapsed]
+  (str (if prev (changes prev state) (full-paint board state))
+       (paint-goal (:goal state))
+       (hud board state)
+       (rows-below board 0 (stats-lines config state elapsed))))
+
+(defn- ^int half-rounded [^int n]
+  (php/intval (php/round (php// n 2))))
+
+(defn banner
+  "`lines` centred on the board, one per row."
+  [{w :width h :height} lines]
+  (let [y (half-rounded h)]
+    (s/join (map-indexed (fn [i text]
+                           (str (move-to (half-rounded (- w (php/strlen text))) (+ y i)) text))
+                         lines))))
+
+(defn messages
+  "`lines` below the stats, clearing anything under them; the cursor stays
+  after the last line."
+  [board lines]
+  (str (rows-below board message-gap lines) "\r\n" erase-below))

@@ -1,0 +1,67 @@
+(ns phel-snake.terminal)
+
+(def- hide-cursor "\e[?25l")
+(def- show-cursor "\e[?25h")
+(def- reset-style "\e[0m")
+(def- sync-begin "\e[?2026h")
+(def- sync-end "\e[?2026l")
+(def- read-chunk 64)
+(def- key-poll-us 20000)
+
+(def- saved-stty (atom nil))
+
+(defn write!
+  "Writes `s` to stdout in one call."
+  [^string s]
+  (php/fwrite php/STDOUT s)
+  nil)
+
+(defn write-frame!
+  "Writes a whole frame as one synchronized update, so supporting terminals
+  repaint it atomically (others ignore the markers)."
+  [^string s]
+  (write! (str sync-begin s sync-end)))
+
+(defn ^string read-available
+  "Every byte pending on stdin, or \"\" when none. Never blocks."
+  []
+  (loop [acc ""]
+    (let [chunk (php/fread php/STDIN read-chunk)]
+      (if (or (= false chunk) (= "" chunk))
+        acc
+        (recur (str acc chunk))))))
+
+(defn ^string wait-input
+  "Blocks until at least one key arrives and returns the pending bytes."
+  []
+  (loop []
+    (let [raw (read-available)]
+      (if (= "" raw)
+        (do (php/usleep key-poll-us) (recur))
+        raw))))
+
+(defn- tty? []
+  (and (php/function_exists "posix_isatty") (php/posix_isatty php/STDIN)))
+
+(defn restore!
+  "Leaves raw mode and shows the cursor again. Safe to call twice."
+  []
+  (when-let [mode (deref saved-stty)]
+    (reset! saved-stty nil)
+    (php/shell_exec (str "stty " (php/escapeshellarg mode))))
+  (php/stream_set_blocking php/STDIN true)
+  (write! (str reset-style show-cursor)))
+
+(defn init!
+  "Raw, non-blocking, cursor-less stdin/stdout. Restores the terminal on exit,
+  Ctrl-C included."
+  []
+  (when (tty?)
+    (reset! saved-stty (php/trim (php/shell_exec "stty -g")))
+    (php/shell_exec "stty -icanon -echo"))
+  (php/stream_set_blocking php/STDIN false)
+  (php/register_shutdown_function restore!)
+  (when (php/function_exists "pcntl_signal")
+    (php/pcntl_async_signals true)
+    (php/pcntl_signal php/SIGINT (fn [_] (php/exit 130))))
+  (write! hide-cursor))

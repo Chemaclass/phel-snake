@@ -1,6 +1,6 @@
-(ns phel-snake\main
-  (:require [phel-snake\config :refer [parse-config]]
-            [phel-snake\game :as game]))
+(ns phel-snake.main
+  (:require [phel-snake.config :refer [parse-config]]
+            [phel-snake.game :as game]))
 
 (when-not *build-mode*
-  (game/run (parse-config argv)))
+  (game/run (parse-config *argv*)))

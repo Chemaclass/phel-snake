@@ -1,17 +1,50 @@
-(ns phel-snake-tests\core\render-test
-  (:require phel-snake\core\render :as r)
-  (:require phel\test :refer [deftest is]))
+(ns phel-snake-tests.core.render-test
+  (:require [phel-snake.core.logic :as l]
+            [phel-snake.core.render :as r]
+            [phel.string :as s]
+            [phel.test :refer [deftest is]]))
 
-# Regression: a param named `new` was parsed as the `new` special form,
-# crashing render-snake-delta at runtime on every frame after the first.
-(deftest test-render-snake-delta-runs
-  (php/ob_start)
-  (try
-    (r/setup-styles)
-    (r/render-snake-delta {:head {:x 2 :y 2} :tail [{:x 1 :y 2}]}
-                          {:head {:x 3 :y 2} :tail [{:x 2 :y 2}]})
-    (r/render-snake-delta {:head {:x 3 :y 2} :tail []}
-                          {:head {:x 4 :y 2} :tail []}
-                          "snake2-head" "snake2-tail")
-    (is true "delta render completes without throwing")
-    (finally (php/ob_end_clean))))
+(def- config {:board {:width 12 :height 8} :debug? false :god-mode? false})
+
+(defn- state [snake]
+  {:players          [{:snake snake :combo {:count 0 :ticks-left 0 :multiplier 1}}]
+   :obstacles        #{{:x 8 :y 5}}
+   :goal             {:pos {:x 6 :y 3} :type :golden}
+   :slow-ticks       0
+   :accelerate-steps 0
+   :level            1
+   :frame            0})
+
+(deftest test-move-to
+  (is (= "\e[3;5H" (r/move-to 5 2)) "rows count from 1")
+  (is (= "\e[1;1H" (r/move-to 0 0)) "x 0 shares the border column"))
+
+(deftest test-full-frame
+  (let [out (r/frame config nil (state (l/->Snake :right 0 {:x 3 :y 3} [])) 0)]
+    (is (s/contains? out "\e[2J") "clears the screen")
+    (is (s/contains? out "+----------+") "draws the border")
+    (is (s/contains? out (str (r/move-to 8 5) "\e[1;37;44m")) "paints obstacles")
+    (is (s/contains? out (str (r/move-to 6 3) "\e[1;30;43m$")) "golden goal glyph")
+    (is (s/contains? out "Score: 0"))))
+
+(deftest test-delta-frame
+  (let [before (l/->Snake :right 0 {:x 3 :y 3} [{:x 2 :y 3}])
+        after  (l/advance before {:x 4 :y 3} false)
+        out    (r/frame config (state before) (state after) 0)]
+    (is (false? (s/contains? out "\e[2J")) "no full repaint")
+    (is (s/contains? out (str (r/move-to 2 3) " ")) "clears the vacated tail tip")
+    (is (s/contains? out (str (r/move-to 4 3) "\e[1;30;41m")) "paints the new head")
+    (is (false? (s/contains? out "\e[1;37;44m")) "unchanged obstacles are not repainted")))
+
+(deftest test-growing-keeps-tip
+  (let [before (l/->Snake :right 0 {:x 3 :y 3} [{:x 2 :y 3}])
+        after  (l/advance before {:x 4 :y 3} true)
+        out    (r/frame config (state before) (state after) 0)]
+    (is (false? (s/contains? out (str (r/move-to 2 3) " "))) "the tip stays")))
+
+(deftest test-banner
+  (is (= (str (r/move-to 5 4) "GO") (r/banner {:width 12 :height 8} ["GO"]))))
+
+(deftest test-banner-centres-odd-sizes
+  (is (= (str (r/move-to 17 11) "GAME OVER") (r/banner {:width 42 :height 21} ["GAME OVER"]))
+      "halves round half up"))

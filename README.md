@@ -11,7 +11,7 @@ docker-compose up --build -d
 docker exec -it phel_snake ./tools/composer play
 ```
 
-Or locally (PHP `>=8.3`):
+Or locally (PHP `>=8.5`):
 
 ```bash
 ./tools/composer install

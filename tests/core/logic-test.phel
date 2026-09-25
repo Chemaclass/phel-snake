@@ -1,173 +1,122 @@
-(ns phel-snake-tests\core\logic-test
-  (:require phel-snake\core\logic :refer [snake
-                                          snake-reach-goal?
-                                          move-snake
-                                          collision-with-board?
-                                          self-collision?
-                                          wrap-head
-                                          grow-snake
-                                          advance-combo
-                                          step-head
-                                          goal-bonus
-                                          obstacle-collision?
-                                          opponent-collision?
-                                          on-any-cell?
-                                          snake-cells
-                                          generate-obstacles-two])
-  (:require phel\test :refer [deftest is]))
+(ns phel-snake-tests.core.logic-test
+  (:require [phel-snake.core.logic :as l]
+            [phel.test :refer [deftest is]]))
+
+(def- board {:width 10 :height 10})
 
 (deftest test-step-head
-  (is (= {:x 6 :y 5} (step-head {:x 5 :y 5} :right)))
-  (is (= {:x 4 :y 5} (step-head {:x 5 :y 5} :left)))
-  (is (= {:x 5 :y 4} (step-head {:x 5 :y 5} :up)))
-  (is (= {:x 5 :y 6} (step-head {:x 5 :y 5} :down))))
+  (is (= {:x 6 :y 5} (l/step-head {:x 5 :y 5} :right)))
+  (is (= {:x 4 :y 5} (l/step-head {:x 5 :y 5} :left)))
+  (is (= {:x 5 :y 4} (l/step-head {:x 5 :y 5} :up)))
+  (is (= {:x 5 :y 6} (l/step-head {:x 5 :y 5} :down))))
 
-(deftest test-snake-reach-goal?
-  (let [goal {:x 2 :y 2}]
-    (is (false? (snake-reach-goal? {:head {:x 1 :y 1}} goal)))
-    (is (true? (snake-reach-goal? {:head {:x 2 :y 2}} goal)))))
+(deftest test-turn
+  (let [s (l/->Snake :right 0 {:x 5 :y 5} [])]
+    (is (= :right (:direction (l/turn s nil))) "nil keeps the direction")
+    (is (= :right (:direction (l/turn s :left))) "180° reversal ignored, no self-kill")
+    (is (= :up (:direction (l/turn s :up))))))
 
-(deftest test-collision-with-board?
-  (let [board {:width 10 :height 10}]
-    (is (false? (collision-with-board? board {:head {:x 5 :y 5}})))
-    (is (true?  (collision-with-board? board {:head {:x 5 :y 0}})) "collision on top")
-    (is (true?  (collision-with-board? board {:head {:x 5 :y 9}})) "collision on bottom")
-    (is (true?  (collision-with-board? board {:head {:x 10 :y 5}})) "collision on right")
-    (is (true?  (collision-with-board? board {:head {:x 0 :y 5}})) "collision on left")))
+(deftest test-advance
+  (let [s (l/->Snake :right 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])]
+    (is (= (l/->Snake :right 1 {:x 6 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
+           (l/advance s {:x 6 :y 5} false))
+        "the tail follows the head")
+    (is (= (l/->Snake :right 1 {:x 6 :y 5} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
+           (l/advance s {:x 6 :y 5} true))
+        "growing keeps the tail tip and moves one cell only")
+    (is (= [{:x 5 :y 5}] (:tail (l/advance (l/->Snake :right 0 {:x 5 :y 5} []) {:x 6 :y 5} false)))
+        "a bare head leaves its first tail cell behind")))
 
-(deftest test-move-snake
-  (let  [s (snake :right 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])]
-    (is (= (snake :right 1 {:x 6 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
-           (move-snake s nil)) "Keep the old direction if nil")
-    (is (= (snake :right 1 {:x 6 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
-           (move-snake s :left)) "180° reversal ignored: keeps :right, no self-kill")
-    (is (= (snake :right 1 {:x 6 :y 5} [{:x 4 :y 5} {:x 5 :y 5}])
-           (move-snake s :right)))
-    (is (= (snake :up 1 {:x 5 :y 4} [{:x 4 :y 5} {:x 5 :y 5}])
-           (move-snake s :up)))
-    (is (= (snake :down 1 {:x 5 :y 6} [{:x 4 :y 5} {:x 5 :y 5}])
-           (move-snake s :down)))))
+(deftest test-hits-wall?
+  (is (false? (l/hits-wall? board {:x 5 :y 5})))
+  (is (true?  (l/hits-wall? board {:x 5 :y 0})) "top")
+  (is (true?  (l/hits-wall? board {:x 5 :y 9})) "bottom")
+  (is (true?  (l/hits-wall? board {:x 10 :y 5})) "right")
+  (is (true?  (l/hits-wall? board {:x 1 :y 5})) "left"))
 
-(deftest test-grow-snake-right
-  (is (= (snake :right 1 {:x 6 :y 5} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
-         (grow-snake (snake :right 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
+(deftest test-wrap-pos
+  (is (= {:x 5 :y 5} (l/wrap-pos board {:x 5 :y 5})) "inside play area => unchanged")
+  (is (= {:x 2 :y 5} (l/wrap-pos board {:x 10 :y 5})) "right => left edge")
+  (is (= {:x 9 :y 5} (l/wrap-pos board {:x 1 :y 5})) "left => right edge")
+  (is (= {:x 5 :y 1} (l/wrap-pos board {:x 5 :y 9})) "bottom => top")
+  (is (= {:x 5 :y 8} (l/wrap-pos board {:x 5 :y 0})) "top => bottom"))
 
-(deftest test-grow-snake-left
-  (is (= (snake :left 1 {:x 4 :y 5} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
-         (grow-snake (snake :left 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
-
-(deftest test-grow-snake-up
-  (is (= (snake :up 1 {:x 5 :y 4} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
-         (grow-snake (snake :up 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
-
-(deftest test-grow-snake-down
-  (is (= (snake :down 1 {:x 5 :y 6} [{:x 3 :y 5} {:x 4 :y 5} {:x 5 :y 5}])
-         (grow-snake (snake :down 1 {:x 5 :y 5} [{:x 3 :y 5} {:x 4 :y 5}])))))
+(deftest test-next-head
+  (let [s (l/->Snake :right 0 {:x 9 :y 5} [])]
+    (is (= {:x 10 :y 5} (l/next-head board false s)))
+    (is (= {:x 2 :y 5} (l/next-head board true s)) "wraps when asked")))
 
 (deftest test-self-collision?
-  (is (false? (self-collision? (snake :right 0 {:x 5 :y 5} [])))
-      "no tail => no self collision")
-  (is (false? (self-collision? (snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])))
-      "head not on any tail cell")
-  (is (true? (self-collision? (snake :right 0 {:x 3 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])))
-      "head overlaps tail cell"))
+  (is (false? (l/self-collision? (l/->Snake :right 0 {:x 5 :y 5} []))) "no tail")
+  (is (false? (l/self-collision? (l/->Snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}]))) "miss")
+  (is (true?  (l/self-collision? (l/->Snake :right 0 {:x 3 :y 5} [{:x 4 :y 5} {:x 3 :y 5}]))) "hit"))
 
-(deftest test-advance-combo
-  (let [zero      {:count 0 :ticks-left 0 :multiplier 1}
-        first-eat (advance-combo zero true)]
-    (is (= 1 (first-eat :count)) "first eat starts the combo")
-    (is (= 1 (first-eat :multiplier)) "first eat has no multiplier")
-    (let [second-eat (advance-combo first-eat true)]
-      (is (= 2 (second-eat :count)) "second eat within window grows combo")
-      (is (= 2 (second-eat :multiplier)) "x2 on second consecutive eat"))
-    (let [ticked (advance-combo first-eat false)]
-      (is (= 1 (ticked :count)) "combo persists while window is open")
-      (is (= 1 (ticked :multiplier)) "no multiplier when not eating"))))
-
-(deftest test-wrap-head
-  (let [board {:width 10 :height 10}]
-    (is (= {:x 5 :y 5}
-           ((wrap-head board (snake :right 0 {:x 5 :y 5} [])) :head))
-        "inside play area => unchanged")
-    (is (= {:x 2 :y 5}
-           ((wrap-head board (snake :right 0 {:x 10 :y 5} [])) :head))
-        "crossed right wall => wraps to left edge")
-    (is (= {:x 9 :y 5}
-           ((wrap-head board (snake :left 0 {:x 1 :y 5} [])) :head))
-        "crossed left wall => wraps to right edge")
-    (is (= {:x 5 :y 1}
-           ((wrap-head board (snake :down 0 {:x 5 :y 9} [])) :head))
-        "crossed bottom wall => wraps to top")
-    (is (= {:x 5 :y 8}
-           ((wrap-head board (snake :up 0 {:x 5 :y 0} [])) :head))
-        "crossed top wall => wraps to bottom")))
-
-(deftest test-goal-bonus-normal
-  (let [b (goal-bonus :normal)]
-    (is (= 1 (b :score-delta)))
-    (is (true? (b :grow?)))
-    (is (= 0 (b :slow-ticks)))))
-
-(deftest test-goal-bonus-golden
-  (let [b (goal-bonus :golden)]
-    (is (= 5 (b :score-delta)) "golden worth 5 points")
-    (is (true? (b :grow?)))
-    (is (= 0 (b :slow-ticks)))))
-
-(deftest test-goal-bonus-slow
-  (let [b (goal-bonus :slow)]
-    (is (= 2 (b :score-delta)))
-    (is (true? (b :grow?)))
-    (is (pos? (b :slow-ticks)) "slow power-up applies slow-ticks")))
-
-(deftest test-goal-bonus-unknown-fallback
-  (is (= (goal-bonus :normal) (goal-bonus :anything-else))
-      "unknown goal type falls back to :normal bonus"))
-
-(deftest test-obstacle-collision?
-  (let [s (snake :right 0 {:x 3 :y 3} [])]
-    (is (false? (obstacle-collision? [] s)) "no obstacles => no collision")
-    (is (false? (obstacle-collision? [{:x 4 :y 4}] s)) "miss")
-    (is (true?  (obstacle-collision? [{:x 3 :y 3}] s)) "hit")))
-
-(deftest test-opponent-collision?
-  (let [s1      (snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}])
-        s2-head (snake :left 0 {:x 5 :y 5} [])
-        s2-tail (snake :left 0 {:x 4 :y 5} [])
-        s2-miss (snake :left 0 {:x 9 :y 9} [])]
-    (is (true?  (opponent-collision? s2-head s1)) "head-on-head collision")
-    (is (true?  (opponent-collision? s2-tail s1)) "stepping on opponent tail")
-    (is (false? (opponent-collision? s2-miss s1)) "unrelated cell => no collision")))
-
-(deftest test-on-any-cell?
-  (is (false? (on-any-cell? [] {:x 1 :y 1})) "empty cells => miss")
-  (is (true?  (on-any-cell? [{:x 1 :y 1}] {:x 1 :y 1})) "match")
-  (is (false? (on-any-cell? [{:x 1 :y 1}] {:x 2 :y 1})) "miss"))
+(deftest test-on-snake?
+  (let [s (l/->Snake :right 0 {:x 5 :y 5} [{:x 4 :y 5}])]
+    (is (true?  (l/on-snake? s {:x 5 :y 5})) "head")
+    (is (true?  (l/on-snake? s {:x 4 :y 5})) "tail")
+    (is (false? (l/on-snake? s {:x 9 :y 9})) "elsewhere")))
 
 (deftest test-snake-cells
   (is (= [{:x 5 :y 5} {:x 4 :y 5} {:x 3 :y 5}]
-         (vec (snake-cells (snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}]))))
+         (vec (l/snake-cells (l/->Snake :right 0 {:x 5 :y 5} [{:x 4 :y 5} {:x 3 :y 5}]))))
       "head first, then the tail cells"))
 
-(deftest test-generate-obstacles-two-avoids-both
+(deftest test-goal-bonus
+  (is (= {:score-delta 1 :grow? true :slow-ticks 0} (l/goal-bonus :normal)))
+  (is (= 5 (:score-delta (l/goal-bonus :golden))) "golden worth 5 points")
+  (is (pos? (:slow-ticks (l/goal-bonus :slow))) "slow power-up applies slow-ticks")
+  (is (= (l/goal-bonus :normal) (l/goal-bonus :anything-else)) "unknown type falls back to :normal"))
+
+(deftest test-random-free-cell-avoids-blocked
   (php/mt_srand 1)
-  (let [board {:width 30 :height 20}
-        s1    (snake :right 0 {:x 5 :y 10} [])
-        s2    (snake :left  0 {:x 25 :y 10} [])
-        obs   (generate-obstacles-two board s1 s2 8)]
+  (let [tiny    {:width 5 :height 4}
+        blocked #{{:x 2 :y 1} {:x 3 :y 1} {:x 2 :y 2}}]
+    (is (= {:x 3 :y 2} (l/random-free-cell tiny blocked)) "only one free cell left")
+    (is (nil? (l/random-free-cell tiny (conj blocked {:x 3 :y 2}))) "full board => nil")))
+
+(deftest test-generate-goal
+  (php/mt_srand 1)
+  (let [goal (l/generate-goal board #{} false)]
+    (is (= :normal (:type goal)) "power-ups off => normal goal")
+    (is (false? (l/hits-wall? board (:pos goal))) "inside the play area")))
+
+(deftest test-generate-obstacles-avoids-snakes
+  (php/mt_srand 1)
+  (let [big {:width 30 :height 20}
+        s1  (l/->Snake :right 0 {:x 5 :y 10} [])
+        s2  (l/->Snake :left 0 {:x 25 :y 10} [])
+        obs (l/generate-obstacles big [s1 s2] 8)]
     (is (= 8 (count obs)) "places the requested count on a roomy board")
-    (is (false? (on-any-cell? obs (s1 :head))) "never spawns on P1's head")
-    (is (false? (on-any-cell? obs (s2 :head))) "never spawns on P2's head")))
+    (is (false? (contains? obs (:head s1))) "never spawns on P1's head")
+    (is (false? (contains? obs (:head s2))) "never spawns on P2's head")
+    (is (false? (contains? obs {:x 6 :y 10})) "keeps P1's spawn corridor clear")))
+
+(deftest test-spawn-wall-segment
+  (php/mt_srand 1)
+  (let [cells (l/spawn-wall-segment {:width 30 :height 20} #{} 3)]
+    (is (= 3 (count cells)))
+    (is (every? #(not (l/hits-wall? {:width 30 :height 20} %)) cells))))
+
+(deftest test-advance-combo
+  (let [zero      {:count 0 :ticks-left 0 :multiplier 1}
+        first-eat (l/advance-combo zero true)]
+    (is (= 1 (:count first-eat)) "first eat starts the combo")
+    (is (= 1 (:multiplier first-eat)) "first eat has no multiplier")
+    (let [second-eat (l/advance-combo first-eat true)]
+      (is (= 2 (:count second-eat)) "second eat within window grows combo")
+      (is (= 2 (:multiplier second-eat)) "x2 on second consecutive eat"))
+    (let [ticked (l/advance-combo first-eat false)]
+      (is (= 1 (:count ticked)) "combo persists while window is open")
+      (is (= 1 (:multiplier ticked)) "no multiplier when not eating"))))
 
 (deftest test-advance-combo-expires
-  (let [start              (advance-combo {:count 0 :ticks-left 0} true)
-        eventually-expired
-        (loop [c start n 40]
-          (if (zero? n) c (recur (advance-combo c false) (dec n))))]
-    (is (= 0 (eventually-expired :count)) "combo count resets after window closes")
-    (is (= 0 (eventually-expired :ticks-left)) "ticks-left clamped to zero")))
+  (let [expired (loop [c (l/advance-combo {:count 0 :ticks-left 0} true) n 40]
+                  (if (zero? n) c (recur (l/advance-combo c false) (dec n))))]
+    (is (= 0 (:count expired)) "combo count resets after window closes")
+    (is (= 0 (:ticks-left expired)) "ticks-left clamped to zero")))
 
 (deftest test-advance-combo-multiplier-cap
   (let [eaten-many (loop [c {:count 0 :ticks-left 0} n 20]
-                     (if (zero? n) c (recur (advance-combo c true) (dec n))))]
-    (is (= 5 (eaten-many :multiplier)) "multiplier capped at combo-multiplier-cap (5)")))
+                     (if (zero? n) c (recur (l/advance-combo c true) (dec n))))]
+    (is (= 5 (:multiplier eaten-many)) "multiplier capped at combo-multiplier-cap (5)")))

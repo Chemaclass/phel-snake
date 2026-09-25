@@ -1,0 +1,123 @@
+(ns phel-snake.core.engine
+  (:require [phel-snake.core.logic :as l]
+            [phel-snake.core.speed :as speed]))
+
+(def initial-combo {:count 0 :ticks-left 0 :multiplier 1})
+(def- wall-segment-length 3)
+(def- duel-spawn-inset 5)
+
+(defn solo?
+  "True when a single snake is on the board."
+  [{:keys [players]}]
+  (= 1 (count players)))
+
+(defn snakes [{:keys [players]}]
+  (mapv :snake players))
+
+(defn- spawn-snakes [{:keys [board two-player?]}]
+  (if two-player?
+    (let [mid-y (php/intdiv (:height board) 2)]
+      [(l/->Snake :right 0 {:x duel-spawn-inset :y mid-y} [])
+       (l/->Snake :left 0 {:x (- (:width board) duel-spawn-inset) :y mid-y} [])])
+    [(l/->Snake :right 0 (l/random-spawn board) [])]))
+
+(defn- occupied
+  "Set of every snake and obstacle cell."
+  [snakes obstacles]
+  (into obstacles (mapcat l/snake-cells) snakes))
+
+(defn init-state [{:keys [board power-ups?] n :obstacle-count :as config}]
+  (let [snakes    (spawn-snakes config)
+        obstacles (l/generate-obstacles board snakes n)]
+    {:players          (mapv (fn [s] {:snake s :combo initial-combo}) snakes)
+     :obstacles        obstacles
+     :goal             (l/generate-goal board (occupied snakes obstacles) power-ups?)
+     :slow-ticks       0
+     :accelerate-steps 0
+     :level            1
+     :frame            0}))
+
+(defn- advance-slow-ticks [bonus slow-ticks]
+  (cond
+    (and bonus (pos? (:slow-ticks bonus))) (:slow-ticks bonus)
+    (pos? slow-ticks)                      (dec slow-ticks)
+    :else                                  0))
+
+(defn- feed
+  "Moves one player's snake to `head`; when it `ate?`, applies `bonus` scaled
+  by the advanced combo."
+  [{:keys [combo]} snake head ate? bonus]
+  (let [next-combo (l/advance-combo combo ate?)
+        grown      (l/advance snake head (and ate? (:grow? bonus)))]
+    {:snake (if ate?
+              (update grown :score + (* (:score-delta bonus) (:multiplier next-combo)))
+              grown)
+     :combo next-combo}))
+
+(defn- first-index [pred coll]
+  (reduce-kv (fn [_ i x] (if (pred x) (reduced i) nil)) nil coll))
+
+(defn- level-up
+  "Adds a wall segment each time the leading score crosses the next level."
+  [{:keys [board] on? :levels? every :level-every}
+   {:keys [players obstacles goal level] :as state}]
+  (if (and on? (>= (apply max (map #(get-in % [:snake :score]) players)) (* level every)))
+    (let [blocked (cond-> (occupied (mapv :snake players) obstacles)
+                          goal (conj (:pos goal)))]
+      (assoc state
+             :level     (inc level)
+             :obstacles (into obstacles (l/spawn-wall-segment board blocked wall-segment-length))))
+    state))
+
+(defn tick
+  "One game step. `directions` holds each player's requested turn (nil keeps
+  going); `accelerate?` is the accelerate key. On a shared goal the first
+  player wins the tie."
+  [{:keys [board wrap? power-ups?] :as config}
+   {:keys [players goal obstacles] :as state}
+   directions accelerate?]
+  (let [turned       (mapv (fn [p d] (l/turn (:snake p) d)) players directions)
+        heads        (mapv #(l/next-head board wrap? %) turned)
+        eater        (when goal (first-index #(l/same-cell? (:pos goal) %) heads))
+        bonus        (when eater (l/goal-bonus (:type goal)))
+        next-players (vec (map-indexed (fn [i p] (feed p (turned i) (heads i) (= i eater) bonus))
+                                       players))]
+    (level-up config
+              (assoc state
+                     :players          next-players
+                     :goal             (if eater
+                                         (l/generate-goal board (occupied (mapv :snake next-players) obstacles) power-ups?)
+                                         goal)
+                     :slow-ticks       (advance-slow-ticks bonus (:slow-ticks state))
+                     :accelerate-steps (speed/advance-accelerate accelerate? (:accelerate-steps state))
+                     :frame            (inc (:frame state))))))
+
+(defn- crashed? [{:keys [board wrap?]} obstacles snake rivals]
+  (let [head (:head snake)]
+    (or (and (not wrap?) (l/hits-wall? board head))
+        (l/self-collision? snake)
+        (contains? obstacles head)
+        (boolean (some #(l/on-snake? % head) rivals)))))
+
+(defn outcome
+  "nil while every snake is alive. Solo: :game-over. Duel: :draw, or the
+  surviving player (:p1 / :p2)."
+  [config {:keys [obstacles] :as state}]
+  (let [snakes  (snakes state)
+        crashes (mapv (fn [s] (crashed? config obstacles s (remove #(identical? s %) snakes)))
+                      snakes)]
+    (cond
+      (not-any? true? crashes) nil
+      (solo? state)            :game-over
+      (every? true? crashes)   :draw
+      (first crashes)          :p2
+      :else                    :p1)))
+
+(defn frame-delay
+  "Microseconds this frame lasts. The score-based ramp and the accelerate
+  burst follow the lead snake in solo play; a duel runs on one fixed tick."
+  [{variable? :variable-speed?} {:keys [players] slow :slow-ticks accel :accelerate-steps :as state}]
+  (speed/compute-delay (:snake (first players))
+                       {:variable-speed? (and variable? (solo? state))}
+                       accel
+                       slow))

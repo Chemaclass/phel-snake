@@ -1,25 +1,32 @@
-(ns phel-snake\core\speed)
+(ns phel-snake.core.speed)
 
 (def base-delay-us 140000)
 (def min-delay-us 60000)
 (def difficulty-scale 4000)
 (def accelerate-window 3)
-(def two-player-min-delay-us 80000)
 
 (defn- horizontal? [dir]
   (or (= :left dir) (= :right dir)))
 
-(defn- variable-delay [score dir]
+(defn- ^int variable-delay [^int score dir]
   (let [delay (max min-delay-us (- base-delay-us (* score difficulty-scale)))]
-    (int (/ delay (if (horizontal? dir) 2 1)))))
+    (if (horizontal? dir) (php/intdiv delay 2) delay)))
 
-(defn compute-delay
+(defn ^int compute-delay
   "Microseconds to sleep between frames. Scales with score in variable-speed
   mode, halves horizontally, zeros during an accelerate burst, doubles when
   a :slow power-up is active."
-  [{:direction dir :score score} {:variable-speed? variable?} accelerate-steps slow-ticks]
+  [{:keys [score] dir :direction} {variable? :variable-speed?} ^int accelerate-steps ^int slow-ticks]
   (let [base (cond
                (pos? accelerate-steps) 0
                variable?               (variable-delay score dir)
                :else                   base-delay-us)]
     (if (pos? slow-ticks) (* base 2) base)))
+
+(defn ^int advance-accelerate
+  "Accelerate-burst steps left after this tick; pressing the key refills it."
+  [pressed? ^int steps]
+  (cond
+    pressed?     accelerate-window
+    (pos? steps) (dec steps)
+    :else        0))

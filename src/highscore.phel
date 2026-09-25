@@ -1,4 +1,4 @@
-(ns phel-snake\highscore)
+(ns phel-snake.highscore)
 
 (defn- home-dir []
   (or (php/getenv "HOME")
@@ -13,8 +13,8 @@
   "Returns the stored high score, or 0 when absent or unreadable."
   []
   (let [p (path)]
-    (if (php/file_exists p)
-      (int (php/trim (php/file_get_contents p)))
+    (if (php/is_readable p)
+      (php/intval (php/trim (php/file_get_contents p)))
       0)))
 
 (defn save-score

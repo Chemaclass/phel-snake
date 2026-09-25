@@ -1,11 +1,11 @@
-FROM php:8.2-fpm
+FROM php:8.5-fpm
 
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y \
     libzip-dev \
     zip \
-  && docker-php-ext-install zip
+  && docker-php-ext-install zip pcntl
 
 COPY .. /app
 WORKDIR /app

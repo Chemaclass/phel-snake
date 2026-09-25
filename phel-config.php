@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Phel\Config\PhelConfig;
 
-return PhelConfig::forProject('phel-snake\main')
-    ->setMainPhpPath('out/main.php')
-    ->setIgnoreWhenBuilding(['local.phel']);
+return PhelConfig::forProject(mainNamespace: 'phel-snake.main')
+    ->withMainPhpPath('out/main.php')
+    ->withOptimizationLevel(2)
+    ->withStripSymbolMeta()
+    ->withIgnoreWhenBuilding(['local.phel']);
