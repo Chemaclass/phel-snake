@@ -15,9 +15,9 @@
   (is (= :up (input/last-direction input/wasd-directions ["w" "x" "?"])) "unmapped keys don't overwrite"))
 
 (deftest test-directions
-  (let [keys (input/split-keys "\e[Bd")]
-    (is (= [:down] (input/directions 1 keys)) "solo reads the arrows only")
-    (is (= [:down :right] (input/directions 2 keys)) "P2 reads WASD")))
+  (let [held (input/split-keys "\e[Bd")]
+    (is (= [:down] (input/directions 1 held)) "solo reads the arrows only")
+    (is (= [:down :right] (input/directions 2 held)) "P2 reads WASD")))
 
 (deftest test-pressed?
   (is (true? (input/pressed? ["a" " "] input/accelerate-key)))
