@@ -16,26 +16,26 @@
   arrows) or a single byte."
   [^string raw]
   (let [len (php/strlen raw)]
-    (loop [i 0 keys []]
+    (loop [i 0 found []]
       (if (>= i len)
-        keys
+        found
         (let [n (if (and (<= (+ i 3) len) (= "\e[" (php/substr raw i 2))) 3 1)]
-          (recur (+ i n) (conj keys (php/substr raw i n))))))))
+          (recur (+ i n) (conj found (php/substr raw i n))))))))
 
 (defn pressed?
-  "True when `key` is among `keys`."
-  [keys key]
-  (boolean (some #(= key %) keys)))
+  "True when `pressed` is among `held`."
+  [held pressed]
+  (boolean (some #(= pressed %) held)))
 
-(defn replay-key? [key]
-  (or (= "r" key) (= "R" key)))
+(defn replay-key? [pressed]
+  (or (= "r" pressed) (= "R" pressed)))
 
 (defn last-direction
-  "The last direction `controls` maps from `keys`, or nil."
-  [controls keys]
-  (last (keep controls keys)))
+  "The last direction `controls` maps from `held`, or nil."
+  [controls held]
+  (last (keep controls held)))
 
 (defn directions
   "Each player's requested direction, reading its own controls."
-  [player-count keys]
-  (mapv #(last-direction % keys) (take player-count player-controls)))
+  [player-count held]
+  (mapv #(last-direction % held) (take player-count player-controls)))

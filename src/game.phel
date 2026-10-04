@@ -42,13 +42,13 @@
           {:outcome outcome :state state :elapsed (elapsed-secs start)
            :replay {:seed seed :inputs recorded}}
           (let [raw     (if replaying? (or (first queued) "") (term/read-available))
-                keys    (input/split-keys raw)
-                paused? (and (not replaying?) (input/pressed? keys input/pause-key))]
+                held    (input/split-keys raw)
+                paused? (and (not replaying?) (input/pressed? held input/pause-key))]
             (when paused? (wait-while-paused board))
             (recur (when-not paused? state)
                    (engine/tick config state
-                                (input/directions (count (:players state)) keys)
-                                (input/pressed? keys input/accelerate-key))
+                                (input/directions (count (:players state)) held)
+                                (input/pressed? held input/accelerate-key))
                    (rest queued)
                    (conj recorded raw))))))))
 
@@ -83,8 +83,8 @@
     (term/read-available)
     (term/write! (str (render/banner board banner)
                       (render/messages board (conj lines "" prompt))))
-    (let [key (first (input/split-keys (term/wait-input)))]
-      (and replay-offered? (input/replay-key? key)))))
+    (let [pressed (first (input/split-keys (term/wait-input)))]
+      (and replay-offered? (input/replay-key? pressed)))))
 
 (defn run [config]
   (term/init!)

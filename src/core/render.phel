@@ -88,10 +88,10 @@
   "Every tip is cleared before any head is painted, so one snake's vacated cell
   never erases another's head."
   [prev {:keys [players obstacles]}]
-  (let [pairs (mapv vector (:players prev) players)]
-    (str (s/join (keep (fn [[o n]] (some-> (dropped-tip (:snake o) (:snake n)) blank)) pairs))
+  (let [snake-pairs (mapv vector (:players prev) players)]
+    (str (s/join (keep (fn [[o n]] (some-> (dropped-tip (:snake o) (:snake n)) blank)) snake-pairs))
          (when-not (identical? obstacles (:obstacles prev)) (paint-obstacles obstacles))
-         (s/join (map-indexed (fn [i [o n]] (snake-delta (:snake o) (:snake n) (snake-styles i))) pairs)))))
+         (s/join (map-indexed (fn [i [o n]] (snake-delta (:snake o) (:snake n) (snake-styles i))) snake-pairs)))))
 
 (defn- hud-line [{w :width} row text style]
   (line-at (+ w hud-margin) row (styled style text)))

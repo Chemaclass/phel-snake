@@ -6,7 +6,7 @@
 (def default-obstacle-count 10)
 (def- default-level-every 5)
 
-(defn- flag? [args name] (contains-value? args name))
+(defn- flag? [args flag-name] (contains-value? args flag-name))
 
 (defn- obstacle-count [args]
   (let [explicit (get-int-arg args "obstacles" -1)]

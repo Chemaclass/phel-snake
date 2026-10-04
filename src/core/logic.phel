@@ -113,8 +113,8 @@
 
 (defn goal-bonus
   "Effect granted by consuming a goal of the given type."
-  [type]
-  (case type
+  [goal-type]
+  (case goal-type
     :golden {:score-delta 5 :grow? true :slow-ticks 0}
     :slow   {:score-delta 2 :grow? true :slow-ticks 40}
     {:score-delta 1 :grow? true :slow-ticks 0}))
